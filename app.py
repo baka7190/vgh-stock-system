@@ -2,27 +2,23 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import os
-import sys
 
 app = Flask(__name__)
 app.secret_key = 'wts_solutions_enterprise_2026_final'
 
-# --- 1. MAINTENANCE KILL SWITCH CONFIGURATION ---
-# Set your exact shutdown time here (Year, Month, Day, Hour, Minute)
-MAINTENANCE_TIME = datetime(2026, 4, 23, 6, 40)  # Dec 31, 2026 at 11:59 PM
+# --- MAINTENANCE CONFIG ---
+MAINTENANCE_TIME = datetime(2026, 4, 23, 7, 00)
 
 
 @app.before_request
 def check_for_maintenance():
-    # Allow logout even during maintenance
-    if request.path == '/logout':
+    if request.path == '/logout' or request.path.startswith('/static'):
         return
-
     if datetime.now() > MAINTENANCE_TIME:
         return render_template('maintenance.html', time=MAINTENANCE_TIME.strftime("%Y-%m-%d %H:%M"))
 
 
-# --- 2. DATABASE PERSISTENCE & AUTO-RESET LOGIC ---
+# --- DATABASE CONFIG ---
 if os.path.exists('/data'):
     db_path = '/data/wts_erp.db'
 else:
@@ -34,7 +30,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 
-# MODELS
+# --- MODELS ---
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     barcode = db.Column(db.String(50), unique=True, nullable=False)
@@ -63,18 +59,21 @@ class Transaction(db.Model):
     timestamp = db.Column(db.DateTime, default=datetime.now)
 
 
-# --- AUTO DATABASE REBUILDER ---
+# --- AGGRESSIVE AUTO-REBUILDER ---
 with app.app_context():
+    rebuild_needed = False
     try:
-        # Check if the database is healthy
         Product.query.first()
+        Transaction.query.first()
+        Department.query.first()
     except Exception as e:
         print(f"⚠️ SCHEMA MISMATCH DETECTED: {e}")
+        rebuild_needed = True
+
+    if rebuild_needed:
         print("🛠️ REBUILDING DATABASE...")
-        db.session.remove()
         db.drop_all()
         db.create_all()
-        # Seed default departments
         db.session.add_all([Department(name="Administration"), Department(name="Technical")])
         db.session.commit()
         print("✅ DATABASE REFRESH COMPLETE.")
@@ -83,8 +82,6 @@ with app.app_context():
 # --- ROUTES ---
 @app.route('/')
 def login():
-    if datetime.now() > MAINTENANCE_TIME:
-        return render_template('maintenance.html', time=MAINTENANCE_TIME.strftime("%Y-%m-%d %H:%M"))
     return render_template('login.html')
 
 
@@ -116,11 +113,18 @@ def dispatch_page():
     return render_template('dispatch.html', depts=depts)
 
 
+# FIXED: Added the missing products API route
+@app.route('/api/products')
+def get_products():
+    products = Product.query.all()
+    return jsonify([{"id": p.id, "name": p.name, "barcode": p.barcode, "stock": p.stock} for p in products])
+
+
 @app.route('/api/check_barcode/<barcode>')
 def check_barcode(barcode):
     p = Product.query.filter_by(barcode=barcode).first()
     if p:
-        return jsonify({"status": "exists", "id": p.id, "name": p.name, "stock": p.stock, "source": p.source_name})
+        return jsonify({"status": "exists", "id": p.id, "name": p.name, "stock": p.stock})
     return jsonify({"status": "new"})
 
 
@@ -147,7 +151,7 @@ def register_product():
     )
     db.session.add(new_p)
     db.session.commit()
-    flash("New Product Asset Registered", "success")
+    flash(f"{new_p.name} Registered!", "success")
     return redirect(url_for('dashboard'))
 
 
@@ -157,10 +161,6 @@ def update_stock():
     trans_type = request.form.get('type')
     qty = int(request.form.get('qty'))
 
-    if trans_type == 'out' and product.stock < qty:
-        flash("Stock Deficiency Detected", "error")
-        return redirect(url_for('dashboard'))
-
     product.stock = (product.stock + qty) if trans_type == 'in' else (product.stock - qty)
 
     log = Transaction(
@@ -169,11 +169,11 @@ def update_stock():
         trans_type=trans_type.upper(),
         qty=qty,
         authorized_by=request.form.get('authorized_by', 'System'),
-        condition=request.form.get('condition', 'Good')
+        condition=request.form.get('condition', 'Operational')
     )
     db.session.add(log)
     db.session.commit()
-    flash(f"Inventory Logged: {product.name}", "success")
+    flash(f"Updated: {product.name}", "success")
     return redirect(url_for('dashboard'))
 
 
