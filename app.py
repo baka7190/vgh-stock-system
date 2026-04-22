@@ -2,11 +2,27 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import os
+import sys
 
 app = Flask(__name__)
-app.secret_key = 'wts_solutions_2026_pro_deploy'
+app.secret_key = 'wts_solutions_enterprise_2026_final'
 
-# --- RENDER PERSISTENT STORAGE LOGIC ---
+# --- 1. MAINTENANCE KILL SWITCH CONFIGURATION ---
+# Set your exact shutdown time here (Year, Month, Day, Hour, Minute)
+MAINTENANCE_TIME = datetime(2026, 4, 23, 6, 40)  # Dec 31, 2026 at 11:59 PM
+
+
+@app.before_request
+def check_for_maintenance():
+    # Allow logout even during maintenance
+    if request.path == '/logout':
+        return
+
+    if datetime.now() > MAINTENANCE_TIME:
+        return render_template('maintenance.html', time=MAINTENANCE_TIME.strftime("%Y-%m-%d %H:%M"))
+
+
+# --- 2. DATABASE PERSISTENCE & AUTO-RESET LOGIC ---
 if os.path.exists('/data'):
     db_path = '/data/wts_erp.db'
 else:
@@ -18,46 +34,66 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 
-# --- DATABASE MODELS ---
+# MODELS
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     barcode = db.Column(db.String(50), unique=True, nullable=False)
     name = db.Column(db.String(100), nullable=False)
     stock = db.Column(db.Integer, default=0)
     min_limit = db.Column(db.Integer, default=5)
-    acquisition_type = db.Column(db.String(20))  # Bought or Donated
-    source_name = db.Column(db.String(100))  # Supplier or Donor
+    acquisition_type = db.Column(db.String(20))
+    source_name = db.Column(db.String(100))
     cost_price = db.Column(db.Float, default=0.0)
     date_added = db.Column(db.DateTime, default=datetime.now)
+
+
+class Department(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), unique=True, nullable=False)
 
 
 class Transaction(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     item_name = db.Column(db.String(100))
     dept = db.Column(db.String(100))
-    trans_type = db.Column(db.String(20))  # IN or OUT
+    trans_type = db.Column(db.String(20))
     qty = db.Column(db.Integer)
+    authorized_by = db.Column(db.String(100))
+    condition = db.Column(db.String(100))
     timestamp = db.Column(db.DateTime, default=datetime.now)
 
 
+# --- AUTO DATABASE REBUILDER ---
 with app.app_context():
-    db.create_all()
+    try:
+        # Check if the database is healthy
+        Product.query.first()
+    except Exception as e:
+        print(f"⚠️ SCHEMA MISMATCH DETECTED: {e}")
+        print("🛠️ REBUILDING DATABASE...")
+        db.session.remove()
+        db.drop_all()
+        db.create_all()
+        # Seed default departments
+        db.session.add_all([Department(name="Administration"), Department(name="Technical")])
+        db.session.commit()
+        print("✅ DATABASE REFRESH COMPLETE.")
 
 
 # --- ROUTES ---
 @app.route('/')
 def login():
+    if datetime.now() > MAINTENANCE_TIME:
+        return render_template('maintenance.html', time=MAINTENANCE_TIME.strftime("%Y-%m-%d %H:%M"))
     return render_template('login.html')
 
 
 @app.route('/auth', methods=['POST'])
 def auth():
-    username = request.form.get('username')
-    password = request.form.get('password')
-    if username == 'admin' and password == 'password123':
-        session['user'] = 'Administrator'
+    if request.form.get('username') == 'admin' and request.form.get('password') == 'password123':
+        session['user'] = 'Admin User'
         return redirect(url_for('dashboard'))
-    flash('Invalid Credentials', 'error')
+    flash('Unauthorized Access', 'error')
     return redirect(url_for('login'))
 
 
@@ -66,32 +102,42 @@ def dashboard():
     if 'user' not in session: return redirect(url_for('login'))
     inventory = Product.query.all()
     alerts = Product.query.filter(Product.stock <= Product.min_limit).all()
-    logs = Transaction.query.order_by(Transaction.timestamp.desc()).limit(8).all()
+    logs = Transaction.query.order_by(Transaction.timestamp.desc()).limit(10).all()
+    depts = Department.query.all()
     return render_template('dashboard.html', inventory=inventory, alerts=alerts,
-                           low_stock_count=len(alerts), total_items=len(inventory), transactions=logs)
+                           low_stock_count=len(alerts), total_items=len(inventory),
+                           transactions=logs, depts=depts)
 
 
 @app.route('/dispatch')
 def dispatch_page():
     if 'user' not in session: return redirect(url_for('login'))
-    return render_template('dispatch.html')
+    depts = Department.query.all()
+    return render_template('dispatch.html', depts=depts)
 
 
-@app.route('/api/products')
-def get_products():
-    products = Product.query.all()
-    return jsonify([{"id": p.id, "name": p.name, "barcode": p.barcode} for p in products])
+@app.route('/api/check_barcode/<barcode>')
+def check_barcode(barcode):
+    p = Product.query.filter_by(barcode=barcode).first()
+    if p:
+        return jsonify({"status": "exists", "id": p.id, "name": p.name, "stock": p.stock, "source": p.source_name})
+    return jsonify({"status": "new"})
+
+
+@app.route('/add_department', methods=['POST'])
+def add_department():
+    name = request.form.get('dept_name')
+    if name and not Department.query.filter_by(name=name).first():
+        db.session.add(Department(name=name))
+        db.session.commit()
+        return jsonify({"status": "success", "name": name})
+    return jsonify({"status": "error"})
 
 
 @app.route('/register_product', methods=['POST'])
 def register_product():
-    barcode = request.form.get('barcode')
-    if Product.query.filter_by(barcode=barcode).first():
-        flash(f"Error: Barcode {barcode} already exists.", "error")
-        return redirect(url_for('dashboard'))
-
     new_p = Product(
-        barcode=barcode,
+        barcode=request.form.get('barcode'),
         name=request.form.get('name'),
         stock=int(request.form.get('stock') or 0),
         min_limit=int(request.form.get('min_limit') or 5),
@@ -101,7 +147,7 @@ def register_product():
     )
     db.session.add(new_p)
     db.session.commit()
-    flash("Product Registered Successfully!", "success")
+    flash("New Product Asset Registered", "success")
     return redirect(url_for('dashboard'))
 
 
@@ -110,20 +156,24 @@ def update_stock():
     product = Product.query.get(int(request.form.get('item_id')))
     trans_type = request.form.get('type')
     qty = int(request.form.get('qty'))
-    dept = request.form.get('dept')
 
-    if trans_type == 'out':
-        if product.stock < qty:
-            flash(f"Insufficient stock for {product.name}", "error")
-            return redirect(url_for('dashboard'))
-        product.stock -= qty
-    else:
-        product.stock += qty
+    if trans_type == 'out' and product.stock < qty:
+        flash("Stock Deficiency Detected", "error")
+        return redirect(url_for('dashboard'))
 
-    log = Transaction(item_name=product.name, dept=dept, trans_type=trans_type.upper(), qty=qty)
+    product.stock = (product.stock + qty) if trans_type == 'in' else (product.stock - qty)
+
+    log = Transaction(
+        item_name=product.name,
+        dept=request.form.get('dept'),
+        trans_type=trans_type.upper(),
+        qty=qty,
+        authorized_by=request.form.get('authorized_by', 'System'),
+        condition=request.form.get('condition', 'Good')
+    )
     db.session.add(log)
     db.session.commit()
-    flash("Stock Update Complete!", "success")
+    flash(f"Inventory Logged: {product.name}", "success")
     return redirect(url_for('dashboard'))
 
 

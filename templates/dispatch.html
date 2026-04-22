@@ -3,90 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WTS ERP | Dispatch</title>
+    <title>WTS | Dispatch Hub</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/html5-qrcode"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <style>body { font-family: 'Inter', sans-serif; opacity: 0; transition: opacity 0.4s; } body.loaded { opacity: 1; } @media (max-width: 1024px) { main { padding-bottom: 90px; } }</style>
 </head>
 <body class="bg-slate-900 flex min-h-screen">
-    <aside class="hidden lg:flex flex-col w-64 h-screen bg-slate-900 text-slate-300 p-4 sticky top-0">
-        <div class="font-black text-white mb-10 px-2 tracking-widest text-sm uppercase">WTS Dispatch</div>
-        <nav class="space-y-2">
-            <a href="/dashboard" class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-800 transition text-sm"><i class="bi bi-grid-fill"></i> Back</a>
-            <a href="/dispatch" class="bg-red-600 text-white flex items-center gap-3 p-3 rounded-xl transition text-sm"><i class="bi bi-truck"></i> Dispatch</a>
+    <aside class="hidden lg:flex flex-col w-72 h-screen p-8 text-slate-500">
+        <div class="font-black text-white text-2xl mb-12 tracking-tighter">WTS TECH</div>
+        <nav class="space-y-6">
+            <a href="/dashboard" class="flex items-center gap-4 p-4 rounded-3xl hover:bg-slate-800 transition font-bold text-sm">
+                <i class="bi bi-arrow-left-circle text-xl"></i> Core Dashboard
+            </a>
+            <a href="/dispatch" class="bg-red-600 text-white flex items-center gap-4 p-4 rounded-3xl font-bold shadow-xl shadow-red-900/40 text-sm">
+                <i class="bi bi-truck text-xl"></i> Dispatch Active
+            </a>
         </nav>
     </aside>
 
-    <main class="flex-1 bg-gray-50 rounded-l-[40px] p-8">
-        <div class="max-w-xl mx-auto">
-            <div class="bg-white rounded-[40px] p-10 shadow-2xl border border-slate-100">
-                <h3 class="font-black text-2xl text-slate-800 uppercase">Dispatch Center</h3>
-                <p class="text-xs text-slate-400 mb-8 italic">Search first letter for suggestions.</p>
+    <main class="flex-1 bg-gray-50 rounded-l-[50px] p-6 lg:p-12 shadow-inner">
+        <div class="max-w-xl mx-auto space-y-8">
+            <div class="bg-white rounded-[4rem] p-12 shadow-2xl border border-slate-100">
+                <h3 class="font-black text-3xl text-slate-800 uppercase tracking-tighter mb-10 leading-tight">Authorize <br>Dispatch</h3>
 
-                <form action="/update_stock" method="POST" class="space-y-6">
+                <form action="/update_stock" method="POST" class="space-y-8">
                     <input type="hidden" name="type" value="out">
-                    <div class="relative">
-                        <label class="text-[10px] font-black text-red-500 uppercase tracking-widest ml-1 mb-2 block">Find Stock</label>
-                        <div class="flex gap-2">
-                            <div class="relative flex-1">
-                                <input type="text" id="itemSearch" placeholder="Type name..." autocomplete="off" class="w-full p-5 bg-slate-50 border-2 border-slate-50 rounded-3xl outline-none focus:border-red-400 text-sm font-bold">
-                                <div id="suggestionBox" class="hidden absolute w-full mt-2 bg-white border border-slate-200 rounded-2xl shadow-2xl z-50 max-h-60 overflow-y-auto"></div>
-                            </div>
-                            <button type="button" onclick="toggleScan()" class="p-5 bg-slate-900 text-white rounded-3xl"><i class="bi bi-qr-code-scan"></i></button>
+
+                    <div>
+                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-3 ml-2">Find Asset Designation</label>
+                        <input type="text" id="itemSearch" placeholder="Type first character..." class="w-full p-6 bg-slate-50 border-2 border-slate-50 rounded-[2.5rem] outline-none focus:border-red-500 font-black text-sm transition">
+                        <div id="suggest" class="hidden absolute w-full max-w-md bg-white shadow-2xl rounded-[2.5rem] border mt-2 z-50 overflow-hidden divide-y divide-slate-50"></div>
+                        <input type="hidden" name="item_id" id="itemId" required>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-6">
+                        <div>
+                            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-3 ml-2">Units Out</label>
+                            <input type="number" name="qty" required class="w-full p-6 bg-slate-50 rounded-[2.5rem] font-black text-lg outline-none border-2 border-slate-50 shadow-inner">
                         </div>
-                        <input type="hidden" name="item_id" id="selectedItemId" required>
+                        <div>
+                            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-3 ml-2">Target Dept</label>
+                            <div class="flex gap-2">
+                                <select name="dept" id="deptSelect" class="flex-1 p-6 bg-slate-50 rounded-[2.5rem] font-black text-xs outline-none border-2 border-slate-50">
+                                    {% for d in depts %}<option>{{ d.name }}</option>{% endfor %}
+                                </select>
+                                <button type="button" onclick="toggleDeptAdd()" class="bg-slate-900 text-white w-16 rounded-[2rem] shadow-lg"><i class="bi bi-plus-lg"></i></button>
+                            </div>
+                        </div>
                     </div>
-                    <div id="scanSect" class="hidden rounded-3xl overflow-hidden border-4 border-slate-900 mb-4 bg-black"><div id="reader"></div></div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <input type="number" name="qty" placeholder="Qty" min="1" required class="p-5 bg-slate-50 rounded-3xl text-sm font-bold outline-none border-2 border-slate-50">
-                        <select name="dept" class="p-5 bg-slate-50 rounded-3xl text-sm font-bold outline-none border-2 border-slate-50"><option>Technical</option><option>Administration</option></select>
+
+                    <div id="newDeptInput" class="hidden bg-blue-600/5 p-6 rounded-[2.5rem] border border-blue-100 space-y-4">
+                        <p class="text-[10px] font-black text-blue-600 uppercase tracking-widest">Register New Department</p>
+                        <div class="flex gap-2">
+                            <input type="text" id="newDeptName" placeholder="Designation Name" class="flex-1 p-4 rounded-2xl border-none outline-none text-xs font-bold">
+                            <button type="button" onclick="saveNewDept()" class="bg-blue-600 text-white px-6 rounded-2xl text-xs font-black">ADD</button>
+                        </div>
                     </div>
-                    <button type="submit" class="w-full bg-red-600 text-white py-6 rounded-3xl font-black text-xs shadow-2xl shadow-red-100 hover:bg-red-700 transition">FINALIZE DISPATCH</button>
+
+                    <div class="space-y-6 pt-8 border-t border-slate-100">
+                        <input type="text" name="authorized_by" placeholder="Authorization Name" required class="w-full p-5 bg-slate-50 border-none rounded-[2rem] text-xs font-black shadow-inner">
+                        <select name="condition" class="w-full p-5 bg-slate-50 border-none rounded-[2rem] text-[10px] font-black uppercase tracking-widest">
+                            <option>Condition: Factory New</option>
+                            <option>Condition: Operational / Used</option>
+                            <option>Condition: Defective / Repair Needed</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="w-full bg-red-600 text-white py-7 rounded-[2.5rem] font-black text-xs tracking-[0.2em] uppercase hover:bg-red-700 transition shadow-2xl shadow-red-200">Finalize Dispatch</button>
                 </form>
             </div>
         </div>
     </main>
 
-    <div class="lg:hidden fixed bottom-0 left-0 right-0 bg-slate-900 text-slate-400 flex justify-around items-center p-3 border-t border-slate-800 z-50">
-        <a href="/dashboard" class="flex flex-col items-center gap-1"><i class="bi bi-grid-fill text-xl"></i><span class="text-[8px] font-black">HOME</span></a>
-        <a href="/dispatch" class="flex flex-col items-center gap-1 text-blue-500"><i class="bi bi-truck text-xl"></i><span class="text-[8px] font-black">DISPATCH</span></a>
-        <a href="/logout" class="flex flex-col items-center gap-1 text-red-400"><i class="bi bi-box-arrow-right text-xl"></i><span class="text-[8px] font-black">EXIT</span></a>
-    </div>
-
     <script>
         window.addEventListener('load', () => document.body.classList.add('loaded'));
-        const searchInput = document.getElementById('itemSearch');
-        const suggestBox = document.getElementById('suggestionBox');
-        const idIn = document.getElementById('selectedItemId');
-        let products = [];
-        fetch('/api/products').then(r => r.json()).then(d => products = d);
+        const search = document.getElementById('itemSearch');
+        const suggest = document.getElementById('suggest');
+        const idIn = document.getElementById('itemId');
+        let prods = [];
+        fetch('/api/products').then(r => r.json()).then(d => prods = d);
 
-        searchInput.addEventListener('input', function() {
-            const v = this.value.toUpperCase(); suggestBox.innerHTML = '';
-            if(v.length < 1) { suggestBox.classList.add('hidden'); return; }
-            const fil = products.filter(p => p.name.toUpperCase().includes(v) || p.barcode.includes(v));
+        search.addEventListener('input', function() {
+            const v = this.value.toUpperCase(); suggest.innerHTML = '';
+            if(v.length < 1) { suggest.classList.add('hidden'); return; }
+            const fil = prods.filter(p => p.name.toUpperCase().includes(v));
             if(fil.length > 0) {
-                suggestBox.classList.remove('hidden');
+                suggest.classList.remove('hidden');
                 fil.forEach(p => {
-                    const d = document.createElement('div'); d.className = 'p-4 hover:bg-slate-50 cursor-pointer text-sm font-bold border-b border-slate-50';
-                    d.innerHTML = `<span>${p.name}</span> <span class="text-[9px] text-slate-400">(${p.barcode})</span>`;
-                    d.onclick = () => { searchInput.value = p.name; idIn.value = p.id; suggestBox.classList.add('hidden'); };
-                    suggestBox.appendChild(d);
+                    const d = document.createElement('div'); d.className = 'p-5 hover:bg-slate-50 cursor-pointer font-black text-xs border-b border-slate-50';
+                    d.innerHTML = `<span>${p.name}</span> <span class="text-slate-300 ml-2">(${p.stock})</span>`;
+                    d.onclick = () => { search.value = p.name; idIn.value = p.id; suggest.classList.add('hidden'); };
+                    suggest.appendChild(d);
                 });
-            } else suggestBox.classList.add('hidden');
+            } else suggest.classList.add('hidden');
         });
 
-        let scanner = new Html5Qrcode("reader");
-        function toggleScan() {
-            const s = document.getElementById('scanSect');
-            if(s.classList.contains('hidden')) {
-                s.classList.remove('hidden');
-                scanner.start({ facingMode: "environment" }, { fps: 15, qrbox: 250 }, (txt) => {
-                    const m = products.find(p => p.barcode === txt);
-                    if(m) { searchInput.value = m.name; idIn.value = m.id; scanner.stop().then(() => s.classList.add('hidden')); }
-                });
-            } else scanner.stop().then(() => s.classList.add('hidden'));
+        function toggleDeptAdd() { document.getElementById('newDeptInput').classList.toggle('hidden'); }
+
+        function saveNewDept() {
+            const n = document.getElementById('newDeptName').value;
+            if(!n) return;
+            const f = new FormData(); f.append('dept_name', n);
+            fetch('/add_department', { method: 'POST', body: f })
+            .then(r => r.json())
+            .then(data => {
+                if(data.status === "success") {
+                    const opt = document.createElement('option'); opt.text = n;
+                    document.getElementById('deptSelect').add(opt);
+                    document.getElementById('deptSelect').value = n;
+                    toggleDeptAdd();
+                } else { alert("Exists!"); }
+            });
         }
     </script>
 </body>

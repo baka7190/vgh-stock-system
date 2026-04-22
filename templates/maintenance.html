@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WTS | Maintenance</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+</head>
+<body class="bg-slate-900 flex items-center justify-center min-h-screen p-6">
+    <div class="max-w-md w-full text-center space-y-8">
+        <div class="relative inline-block">
+            <i class="bi bi-shield-lock text-7xl text-amber-500 animate-pulse"></i>
+            <div class="absolute -top-2 -right-2 w-6 h-6 bg-red-600 rounded-full border-4 border-slate-900"></div>
+        </div>
+
+        <div class="space-y-4">
+            <h1 class="text-3xl font-black text-white uppercase tracking-tighter">System Offline</h1>
+            <div class="h-1 w-20 bg-amber-500 mx-auto rounded-full"></div>
+            <p class="text-slate-400 text-sm font-medium leading-relaxed">
+                This WTS Inventory Terminal reached its maintenance deadline on <br>
+                <span class="text-white font-bold">{{ time }}</span>.
+            </p>
+        </div>
+
+        <div class="bg-slate-800/50 p-6 rounded-[30px] border border-slate-700">
+            <p class="text-xs text-slate-500 uppercase font-black tracking-widest mb-2">Required Action</p>
+            <p class="text-slate-300 text-sm">Please contact the WTS Solutions administrator for a system upgrade or license renewal.</p>
+        </div>
+
+        <a href="mailto:admin@wts-tech.com" class="inline-flex items-center gap-2 text-amber-500 font-bold hover:text-amber-400 transition">
+            <i class="bi bi-envelope-at"></i> Contact Support
+        </a>
+    </div>
+</body>
+</html>
