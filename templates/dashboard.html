@@ -1,247 +1,79 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WTS ERP | Management</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/html5-qrcode"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-        body { font-family: 'Inter', sans-serif; opacity: 0; transition: opacity 0.4s; }
-        body.loaded { opacity: 1; }
-        .glass-modal { backdrop-filter: blur(12px); background: rgba(15, 23, 42, 0.85); }
-        @media (max-width: 1024px) { main { padding-bottom: 120px !important; } }
-    </style>
-</head>
-<body class="bg-slate-50 flex min-h-screen">
+{% extends "base.html" %}
+{% block content %}
+<div class="mb-5">
+    <h3 class="fw-bold mb-1">Dashboard</h3>
+    <p class="text-muted small">Vanimo General Hospital — Stock Control</p>
+</div>
 
-    <aside class="hidden lg:flex flex-col w-72 h-screen bg-slate-900 text-slate-300 sticky top-0 p-8">
-        <div class="mb-12 font-black text-white text-2xl tracking-tighter">WTS TECH</div>
-        <nav class="flex-1 space-y-4">
-            <a href="/dashboard" class="flex items-center gap-4 p-4 bg-blue-600 text-white rounded-3xl shadow-xl shadow-blue-900/40 font-bold text-sm">
-                <i class="bi bi-grid-fill text-xl"></i> Dashboard
-            </a>
-            <a href="/history" class="sidebar-link flex items-center gap-3 p-3 rounded-xl transition text-sm">
-        <i class="bi bi-clock-history"></i> Audit History
-    </a>
-    </nav>
-            <a href="/dispatch" class="flex items-center gap-4 p-4 rounded-3xl hover:bg-slate-800 transition font-bold text-sm text-slate-400">
-                <i class="bi bi-truck text-xl"></i> Dispatch Hub
-            </a>
-            <button onclick="openRegister()" class="w-full flex items-center gap-4 p-4 rounded-3xl hover:bg-slate-800 transition text-left font-bold text-sm text-slate-400">
-                <i class="bi bi-plus-circle text-xl"></i> New Stock
-            </button>
-        </nav>
-        <div class="pt-8 border-t border-slate-800">
-            <p class="text-[10px] text-slate-500 uppercase font-black tracking-widest">{{ session['user'] }}</p>
-            <a href="/logout" class="text-red-500 font-bold text-sm mt-2 block">Close System</a>
-        </div>
-    </aside>
-
-    <main class="flex-1">
-        <header class="bg-white/90 backdrop-blur-md border-b p-6 flex justify-between items-center sticky top-0 z-40">
-            <h1 class="font-black text-slate-800 text-xs uppercase tracking-widest">Inventory Matrix</h1>
-            <button onclick="startSmartScan()" class="bg-slate-900 text-white px-8 py-4 rounded-[2rem] flex items-center gap-3 text-[11px] font-black hover:scale-105 transition shadow-2xl">
-                <i class="bi bi-qr-code-scan text-xl text-blue-400"></i> SMART SCAN
-            </button>
-        </header>
-
-        <div class="p-4 lg:p-12 max-w-7xl mx-auto space-y-10">
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}{% for category, msg in messages %}
-                <div class="p-5 rounded-3xl font-black text-xs shadow-lg animate-in slide-in-from-top duration-500 {% if category == 'error' %}bg-red-500 text-white{% else %}bg-blue-600 text-white{% endif %}">
-                    {{ msg }}
-                </div>
-                {% endfor %}{% endif %}
-            {% endwith %}
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div class="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100">
-                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Global Assets</p>
-                    <h2 class="text-5xl font-black text-slate-800">{{ total_items }}</h2>
-                </div>
-                <div class="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100">
-                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Critical Alerts</p>
-                    <h2 class="text-5xl font-black text-red-600">{{ low_stock_count }}</h2>
-                </div>
-                <div class="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100 flex items-center justify-between">
-                    <div>
-                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">System Status</p>
-                        <p class="text-xs font-black text-blue-600 uppercase">Secure / Online</p>
-                    </div>
-                    <i class="bi bi-shield-check text-4xl text-blue-100"></i>
-                </div>
+<div class="row g-4 mb-5">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm p-4 h-100 text-center" style="border-radius: 20px;">
+            <div class="mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; background: #ecfdf5; border-radius: 12px;">
+                <i data-lucide="package" class="text-success"></i>
             </div>
-
-            <div class="bg-white rounded-[3.5rem] shadow-sm border border-slate-100 overflow-hidden">
-                <div class="p-8 border-b flex flex-col md:flex-row md:items-center justify-between gap-6">
-                    <h3 class="font-black text-slate-800 text-xs uppercase tracking-widest">Inventory Database</h3>
-                    <div class="relative w-full md:w-80">
-                        <i class="bi bi-search absolute left-4 top-3 text-slate-300"></i>
-                        <input type="text" id="searchInput" placeholder="Search Matrix..." class="bg-slate-50 p-3 pl-12 rounded-2xl w-full text-xs font-bold outline-none border border-transparent focus:border-blue-400 transition shadow-inner">
-                    </div>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full">
-                        <thead class="bg-slate-50/80 text-slate-400 text-[10px] font-black uppercase tracking-widest border-b">
-                            <tr>
-                                <th class="p-8 text-left">Asset Details</th>
-                                <th class="p-8 text-center">Unit Balance</th>
-                                <th class="p-8 text-right">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="inventoryTable" class="divide-y divide-slate-100">
-                            {% for item in inventory %}
-                            <tr class="hover:bg-blue-50/30 transition">
-                                <td class="p-8">
-                                    <p class="font-black text-slate-800 uppercase tracking-tight text-sm">{{ item.name }}</p>
-                                    <p class="text-[10px] text-slate-400 font-bold mt-1 tracking-widest">{{ item.barcode }} | {{ item.acquisition_type }}</p>
-                                </td>
-                                <td class="p-8 text-center font-black text-2xl text-slate-700 tracking-tighter">{{ item.stock }}</td>
-                                <td class="p-8 text-right">
-                                    {% if item.stock <= item.min_limit %}
-                                    <span class="px-4 py-2 bg-red-100 text-red-600 rounded-2xl text-[9px] font-black tracking-widest">REORDER</span>
-                                    {% else %}
-                                    <span class="px-4 py-2 bg-emerald-100 text-emerald-600 rounded-2xl text-[9px] font-black tracking-widest">OK</span>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </main>
-
-    <div class="lg:hidden fixed bottom-0 left-0 right-0 glass-modal text-slate-400 flex justify-around items-center p-6 border-t border-slate-800 z-50 rounded-t-[40px]">
-        <a href="/dashboard" class="flex flex-col items-center gap-1 text-blue-500">
-            <i class="bi bi-house-door-fill text-2xl"></i>
-            <span class="text-[8px] font-black uppercase">Core</span>
-        </a>
-        <button onclick="startSmartScan()" class="bg-white text-slate-900 w-16 h-16 rounded-full flex items-center justify-center -mt-12 shadow-2xl border-4 border-slate-900 transition active:scale-90">
-            <i class="bi bi-qr-code-scan text-2xl"></i>
-        </button>
-        <a href="/dispatch" class="flex flex-col items-center gap-1">
-            <i class="bi bi-truck text-2xl"></i>
-            <span class="text-[8px] font-black uppercase">Out</span>
-        </a>
-    </div>
-
-    <div id="smartScanModal" class="hidden fixed inset-0 glass-modal z-[100] flex items-center justify-center p-6">
-        <div class="bg-white rounded-[3.5rem] p-10 max-w-sm w-full shadow-2xl text-center space-y-6">
-            <h3 class="font-black text-xl text-slate-800 uppercase tracking-tighter" id="scanTitle">Scanning Asset</h3>
-            <div id="smartReader" class="rounded-[2.5rem] overflow-hidden border-4 border-slate-900 bg-black aspect-square"></div>
-
-            <div id="scanResult" class="hidden space-y-4">
-                <div class="p-6 bg-slate-50 rounded-[2.5rem] border border-blue-100">
-                    <p id="resName" class="font-black text-slate-800 uppercase text-lg leading-tight"></p>
-                    <p id="resStock" class="text-[10px] text-blue-500 font-black mt-2 tracking-widest uppercase"></p>
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <button onclick="handleScanAction('in')" class="bg-emerald-600 text-white py-5 rounded-3xl font-black text-[10px] tracking-widest shadow-xl shadow-emerald-100">ADD STOCK</button>
-                    <button onclick="handleScanAction('out')" class="bg-red-600 text-white py-5 rounded-3xl font-black text-[10px] tracking-widest shadow-xl shadow-red-100">DISPATCH</button>
-                </div>
-            </div>
-
-            <div id="newAssetNotify" class="hidden space-y-6">
-                <i class="bi bi-patch-question-fill text-6xl text-blue-600"></i>
-                <p class="font-bold text-sm text-slate-700 leading-relaxed uppercase tracking-tighter">Unknown Asset Detected. Register this to the database?</p>
-                <div class="flex gap-2">
-                    <button onclick="openRegister(lastScannedCode)" class="flex-1 bg-blue-600 text-white py-5 rounded-3xl font-black text-[10px] tracking-widest shadow-lg shadow-blue-100">REGISTER</button>
-                    <button onclick="closeSmartScan()" class="flex-1 bg-slate-100 text-slate-400 py-5 rounded-3xl font-black text-[10px] tracking-widest">IGNORE</button>
-                </div>
-            </div>
-
-            <button onclick="closeSmartScan()" class="w-full text-[10px] font-black text-slate-300 uppercase tracking-widest mt-4">Abort Process</button>
+            <p class="text-muted small mb-1">Total Items</p>
+            <h2 class="fw-bold mb-0">{{ total_items }}</h2>
         </div>
     </div>
-
-    <div id="regModal" class="hidden fixed inset-0 glass-modal z-[100] flex items-center justify-center p-6">
-        <div class="bg-white rounded-[3.5rem] p-10 max-w-sm w-full shadow-2xl space-y-6">
-            <h2 class="font-black text-2xl text-slate-800 uppercase tracking-tighter">New Asset Entry</h2>
-            <form action="/register_product" method="POST" class="space-y-4">
-                <input type="text" name="barcode" id="regBarcode" placeholder="Scan or Type ID" required class="w-full p-5 bg-slate-50 border-2 border-slate-50 rounded-3xl font-mono text-sm outline-none focus:border-blue-500 transition">
-                <input type="text" name="name" placeholder="Entity Designation" required class="w-full p-5 bg-slate-50 border-2 border-slate-50 rounded-3xl text-sm font-black outline-none focus:border-blue-500 transition">
-                <div class="flex gap-2 p-1 bg-slate-100 rounded-[2rem]">
-                    <label class="flex-1 text-center"><input type="radio" name="acquisition_type" value="Bought" checked class="hidden peer"><div class="py-3 rounded-[1.5rem] cursor-pointer peer-checked:bg-white peer-checked:text-blue-600 text-[10px] font-black transition">BOUGHT</div></label>
-                    <label class="flex-1 text-center"><input type="radio" name="acquisition_type" value="Donated" class="hidden peer"><div class="py-3 rounded-[1.5rem] cursor-pointer peer-checked:bg-white peer-checked:text-blue-600 text-[10px] font-black transition">DONATED</div></label>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <input type="number" name="stock" placeholder="Initial Bal" class="p-5 bg-slate-50 rounded-3xl text-sm font-black outline-none">
-                    <input type="number" name="min_limit" placeholder="Min Alert" value="5" class="p-5 bg-slate-50 rounded-3xl text-sm font-black outline-none">
-                </div>
-                <button type="submit" class="w-full bg-slate-900 text-white py-6 rounded-[2rem] font-black text-[11px] tracking-widest shadow-2xl hover:bg-black transition">AUTHENTICATE & SAVE</button>
-                <button type="button" onclick="toggleModal('regModal')" class="w-full text-[10px] font-black text-slate-300 uppercase tracking-widest">Cancel Entry</button>
-            </form>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm p-4 h-100 text-center" style="border-radius: 20px;">
+            <div class="mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; background: #fffbeb; border-radius: 12px;">
+                <i data-lucide="alert-triangle" class="text-warning"></i>
+            </div>
+            <p class="text-muted small mb-1">Low Stock</p>
+            <h2 class="fw-bold mb-0">{{ low_stock_count }}</h2>
         </div>
     </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm p-4 h-100 text-center" style="border-radius: 20px;">
+            <div class="mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; background: #f0fdf4; border-radius: 12px;">
+                <i data-lucide="trending-up" class="text-success"></i>
+            </div>
+            <p class="text-muted small mb-1">Stock In (Month)</p>
+            <h2 class="fw-bold mb-0">{{ stock_in_month }}</h2>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm p-4 h-100 text-center" style="border-radius: 20px;">
+            <div class="mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; background: #fef2f2; border-radius: 12px;">
+                <i data-lucide="trending-down" class="text-danger"></i>
+            </div>
+            <p class="text-muted small mb-1">Stock Out (Month)</p>
+            <h2 class="fw-bold mb-0">{{ stock_out_month }}</h2>
+        </div>
+    </div>
+</div>
 
-    <script>
-        window.addEventListener('load', () => document.body.classList.add('loaded'));
-        let smartScanner = new Html5Qrcode("smartReader");
-        let lastScannedCode = "";
+<div class="card border-0 shadow-sm p-5" style="border-radius: 25px;">
+    <div class="d-flex align-items-center gap-2 mb-4">
+        <i data-lucide="activity" class="text-success" size="18"></i>
+        <h5 class="fw-bold mb-0">Recent Activity</h5>
+    </div>
 
-        function toggleModal(id) { document.getElementById(id).classList.toggle('hidden'); }
-
-        function startSmartScan() {
-            toggleModal('smartScanModal');
-            document.getElementById('scanResult').classList.add('hidden');
-            document.getElementById('newAssetNotify').classList.add('hidden');
-            document.getElementById('smartReader').classList.remove('hidden');
-
-            smartScanner.start({ facingMode: "environment" }, { fps: 20, qrbox: 250 }, (txt) => {
-                lastScannedCode = txt;
-                smartScanner.stop().then(() => {
-                    document.getElementById('smartReader').classList.add('hidden');
-                    fetch('/api/check_barcode/' + txt)
-                    .then(r => r.json())
-                    .then(data => {
-                        if(data.status === "exists") {
-                            document.getElementById('resName').innerText = data.name;
-                            document.getElementById('resStock').innerText = "Current Balance: " + data.stock + " Units";
-                            window.selectedScannedId = data.id;
-                            document.getElementById('scanResult').classList.remove('hidden');
-                        } else {
-                            document.getElementById('newAssetNotify').classList.remove('hidden');
-                        }
-                    });
-                });
-            }).catch(e => console.log(e));
-        }
-
-        function handleScanAction(type) {
-            const qty = prompt("Enter Quantity:", "1");
-            if(qty) {
-                const f = new FormData();
-                f.append('item_id', window.selectedScannedId);
-                f.append('type', type);
-                f.append('qty', qty);
-                f.append('dept', 'Smart Hub');
-                fetch('/update_stock', { method: 'POST', body: f }).then(() => location.reload());
-            }
-        }
-
-        function openRegister(code = "") {
-            toggleModal('smartScanModal');
-            toggleModal('regModal');
-            if(code) document.getElementById('regBarcode').value = code;
-        }
-
-        function closeSmartScan() {
-            smartScanner.stop().catch(() => {});
-            toggleModal('smartScanModal');
-        }
-
-        document.getElementById('searchInput').addEventListener('keyup', function() {
-            let filter = this.value.toUpperCase();
-            let rows = document.querySelector("#inventoryTable").rows;
-            for (let i = 0; i < rows.length; i++) {
-                rows[i].style.display = rows[i].textContent.toUpperCase().includes(filter) ? "" : "none";
-            }
-        });
-    </script>
-</body>
-</html>
+    {% if transactions %}
+        <div class="table-responsive">
+            <table class="table table-borderless align-middle">
+                <tbody>
+                    {% for t in transactions %}
+                    <tr class="border-bottom">
+                        <td width="50">
+                            <div class="rounded-3 p-2 d-inline-block {% if t.trans_type == 'IN' %}bg-success-subtle{% else %}bg-danger-subtle{% endif %}">
+                                <i data-lucide="{% if t.trans_type == 'IN' %}arrow-down-left{% else %}arrow-up-right{% endif %}" size="16"></i>
+                            </div>
+                        </td>
+                        <td class="fw-bold">{{ t.item_name }}</td>
+                        <td class="text-muted">{{ t.dept }}</td>
+                        <td class="fw-bold">{% if t.trans_type == 'IN' %}+{% else %}-{% endif %}{{ t.qty }}</td>
+                        <td class="text-end text-muted small">{{ t.timestamp.strftime('%H:%M %p') }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="text-center py-5">
+            <p class="text-muted">No transactions yet. Record stock in or out to see activity.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

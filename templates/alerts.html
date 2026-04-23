@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}Alerts | VGH Stock{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 py-lg-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-dark m-0">Alerts</h2>
+            <p class="text-muted small mb-0">Low stock and expiry warnings</p>
+        </div>
+        <a href="/inventory" class="btn btn-light border rounded-3 px-3 fw-bold text-sm">
+            View Inventory
+        </a>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm p-4 h-100 rounded-4">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-3 p-2 d-flex align-items-center justify-content-center" style="background: #fef2f2; width: 45px; height: 45px;">
+                        <i data-lucide="package-x" class="text-danger" size="22"></i>
+                    </div>
+                    <div class="text-start">
+                        <p class="text-muted small mb-0 font-bold">Out of Stock</p>
+                        <h3 class="fw-bold mb-0 text-dark">{{ out_of_stock_count }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm p-4 h-100 rounded-4">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-3 p-2 d-flex align-items-center justify-content-center" style="background: #fffbeb; width: 45px; height: 45px;">
+                        <i data-lucide="trending-down" class="text-warning" size="22"></i>
+                    </div>
+                    <div class="text-start">
+                        <p class="text-muted small mb-0 font-bold">Low Stock</p>
+                        <h3 class="fw-bold mb-0 text-dark">{{ low_stock_count }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm p-4 h-100 rounded-4">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-3 p-2 d-flex align-items-center justify-content-center" style="background: #fef2f2; width: 45px; height: 45px;">
+                        <i data-lucide="calendar-x" class="text-danger" size="22"></i>
+                    </div>
+                    <div class="text-start">
+                        <p class="text-muted small mb-0 font-bold">Expired Batches</p>
+                        <h3 class="fw-bold mb-0 text-dark">0</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm p-4 h-100 rounded-4">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-3 p-2 d-flex align-items-center justify-content-center" style="background: #fff7ed; width: 45px; height: 45px;">
+                        <i data-lucide="clock" class="text-warning" size="22"></i>
+                    </div>
+                    <div class="text-start">
+                        <p class="text-muted small mb-0 font-bold">Expiring (30d)</p>
+                        <h3 class="fw-bold mb-0 text-dark">0</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
+        <div class="card-header bg-white border-0 p-4 pb-0">
+            <h6 class="fw-bold text-dark d-flex align-items-center gap-2">
+                <i data-lucide="alert-triangle" class="text-warning" size="18"></i> Low Stock Items
+            </h6>
+        </div>
+        <div class="card-body p-5 text-center">
+            {% if low_stock_items %}
+                <div class="table-responsive text-start">
+                    <table class="table align-middle">
+                        <thead class="text-muted small uppercase">
+                            <tr><th>Item</th><th>Current Stock</th><th>Min Limit</th><th>Action</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for item in low_stock_items %}
+                            <tr>
+                                <td class="fw-bold">{{ item.name }}</td>
+                                <td class="text-danger fw-bold">{{ item.stock }}</td>
+                                <td>{{ item.min_limit }}</td>
+                                <td><a href="/stock-in?id={{ item.id }}" class="btn btn-sm btn-success">Order</a></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="py-4">
+                    <p class="text-success fw-bold d-flex align-items-center justify-content-center gap-2 mb-0">
+                        <i data-lucide="check-circle" size="18"></i> All items are above minimum stock levels
+                    </p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="card-header bg-white border-0 p-4 pb-0 d-flex justify-content-between align-items-center">
+            <h6 class="fw-bold text-dark d-flex align-items-center gap-2 m-0">
+                <i data-lucide="calendar-days" class="text-danger" size="18"></i> Expiry Tracking
+            </h6>
+            <div class="btn-group btn-group-sm rounded-3 overflow-hidden shadow-xs border">
+                <button class="btn btn-light px-3 fw-bold border-end">7d</button>
+                <button class="btn btn-success px-3 fw-bold" style="background: var(--vgh-green); border-color: var(--vgh-green);">30d</button>
+                <button class="btn btn-light px-3 fw-bold border-start">90d</button>
+            </div>
+        </div>
+        <div class="card-body p-5 text-center">
+            <div class="py-4">
+                <p class="text-success fw-bold d-flex align-items-center justify-content-center gap-2 mb-0">
+                    <i data-lucide="check-circle" size="18"></i> No batches expiring in the next 30 days
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .font-bold { font-weight: 700; }
+    .shadow-xs { box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+</style>
+{% endblock %}

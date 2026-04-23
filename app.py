@@ -4,23 +4,25 @@ from datetime import datetime
 import os
 
 app = Flask(__name__)
-app.secret_key = 'wts_solutions_enterprise_2026_final'
+app.secret_key = 'vgh_hospital_secure_key_2026'
 
-# --- MAINTENANCE KILL SWITCH ---
-# Format: datetime(Year, Month, Day, Hour, Minute)
 MAINTENANCE_TIME = datetime(2026, 12, 31, 23, 59)
+
 
 @app.before_request
 def check_for_maintenance():
-    if request.path == '/logout' or request.path.startswith('/static') or request.path == '/history':
+    if request.path == '/logout' or request.path.startswith('/static'):
         return
     if datetime.now() > MAINTENANCE_TIME:
         return render_template('maintenance.html', time=MAINTENANCE_TIME.strftime("%Y-%m-%d %H:%M"))
 
-# --- DATABASE PERSISTENCE ---
-if os.path.exists('/data'):
-    db_path = '/data/wts_erp.db'
+
+# --- DATABASE PERSISTENCE (RENDER & LOCAL) ---
+if os.environ.get('RENDER'):
+    # This path matches the 'Mount Path' of the Render Disk
+    db_path = '/opt/render/project/src/data/wts_erp.db'
 else:
+    # This is for your local laptop (PyCharm)
     basedir = os.path.abspath(os.path.dirname(__file__))
     db_path = os.path.join(basedir, 'wts_erp.db')
 
@@ -28,51 +30,67 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + db_path
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# MODELS
+
+# --- MODELS ---
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    barcode = db.Column(db.String(50), unique=True, nullable=False)
+    barcode = db.Column(db.String(50), unique=True)
+    sku = db.Column(db.String(50), unique=True, nullable=False)
     name = db.Column(db.String(100), nullable=False)
+    unit = db.Column(db.String(20), default="Units")
     stock = db.Column(db.Integer, default=0)
-    min_limit = db.Column(db.Integer, default=5)
-    acquisition_type = db.Column(db.String(20))
-    source_name = db.Column(db.String(100))
+    min_limit = db.Column(db.Integer, default=10)
     cost_price = db.Column(db.Float, default=0.0)
+    description = db.Column(db.Text)
     date_added = db.Column(db.DateTime, default=datetime.now)
+
 
 class Department(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), unique=True, nullable=False)
 
+
+class Category(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), unique=True, nullable=False)
+    type = db.Column(db.String(50))
+    description = db.Column(db.Text)
+
+
 class Transaction(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     item_name = db.Column(db.String(100))
     dept = db.Column(db.String(100))
-    trans_type = db.Column(db.String(20)) # IN or OUT
+    trans_type = db.Column(db.String(20))
     qty = db.Column(db.Integer)
+    voucher_no = db.Column(db.String(50))
+    batch_no = db.Column(db.String(50))
+    expiry_date = db.Column(db.String(20))
     authorized_by = db.Column(db.String(100))
-    condition = db.Column(db.String(100))
     timestamp = db.Column(db.DateTime, default=datetime.now)
 
-# AUTO REBUILDER
-with app.app_context():
-    rebuild = False
-    try:
-        Product.query.first()
-        Transaction.query.first()
-        Department.query.first()
-    except:
-        rebuild = True
-    if rebuild:
-        db.drop_all()
-        db.create_all()
-        db.session.add_all([Department(name="Administration"), Department(name="Technical")])
-        db.session.commit()
 
-# ROUTES
+# --- UNIFIED AUTO REBUILDER ---
+with app.app_context():
+    try:
+        # Check if tables exist, if not, create_all will handle it via the exception
+        Product.query.first()
+    except:
+        db.create_all()
+        if not Department.query.first():
+            db.session.add_all([
+                Department(name="Emergency Ward"),
+                Department(name="Pharmacy"),
+                Department(name="Maternity"),
+                Department(name="General Outpatient")
+            ])
+            db.session.commit()
+
+
+# --- ROUTES ---
 @app.route('/')
-def login():
-    return render_template('login.html')
+def login(): return render_template('login.html')
+
 
 @app.route('/auth', methods=['POST'])
 def auth():
@@ -82,72 +100,156 @@ def auth():
     flash('Unauthorized Access', 'error')
     return redirect(url_for('login'))
 
+
 @app.route('/dashboard')
 def dashboard():
     if 'user' not in session: return redirect(url_for('login'))
+    now = datetime.now()
+    first_day = now.replace(day=1, hour=0, minute=0, second=0)
     inventory = Product.query.all()
-    alerts = Product.query.filter(Product.stock <= Product.min_limit).all()
-    logs = Transaction.query.order_by(Transaction.timestamp.desc()).limit(10).all()
-    depts = Department.query.all()
-    return render_template('dashboard.html', inventory=inventory, alerts=alerts, low_stock_count=len(alerts), total_items=len(inventory), transactions=logs, depts=depts)
+    low_stock = Product.query.filter(Product.stock <= Product.min_limit).all()
+    in_month = Transaction.query.filter(Transaction.trans_type == 'IN', Transaction.timestamp >= first_day).count()
+    out_month = Transaction.query.filter(Transaction.trans_type == 'OUT', Transaction.timestamp >= first_day).count()
+    logs = Transaction.query.order_by(Transaction.timestamp.desc()).limit(5).all()
+    return render_template('dashboard.html', total_items=len(inventory), low_stock_count=len(low_stock),
+                           stock_in_month=in_month, stock_out_month=out_month, transactions=logs)
+
+
+@app.route('/inventory')
+def inventory():
+    if 'user' not in session: return redirect(url_for('login'))
+    return render_template('inventory.html', inventory=Product.query.all())
+
+
+@app.route('/stock-in')
+def stock_in():
+    if 'user' not in session: return redirect(url_for('login'))
+    all_transactions = Transaction.query.order_by(Transaction.timestamp.desc()).all()
+    all_inventory = Product.query.all()
+    return render_template('stock_in.html', transactions=all_transactions, inventory=all_inventory)
+
 
 @app.route('/dispatch')
 def dispatch_page():
     if 'user' not in session: return redirect(url_for('login'))
-    depts = Department.query.all()
-    return render_template('dispatch.html', depts=depts)
+    all_transactions = Transaction.query.order_by(Transaction.timestamp.desc()).all()
+    all_inventory = Product.query.all()
+    all_depts = Department.query.all()
+    return render_template('stock_out.html', transactions=all_transactions, inventory=all_inventory, depts=all_depts)
 
-@app.route('/history')
-def history_page():
+
+@app.route('/reports')
+def reports_page():
     if 'user' not in session: return redirect(url_for('login'))
-    all_logs = Transaction.query.order_by(Transaction.timestamp.desc()).all()
-    return render_template('history.html', transactions=all_logs)
+    inventory = Product.query.all()
+    low_stock = Product.query.filter(Product.stock <= Product.min_limit).all()
+    total_value = sum((item.stock * (item.cost_price or 0)) for item in inventory)
+    return render_template('reports.html', total_items=len(inventory), low_stock_count=len(low_stock),
+                           total_value=round(total_value, 2))
 
-@app.route('/api/products')
-def get_products():
-    products = Product.query.all()
-    return jsonify([{"id": p.id, "name": p.name, "barcode": p.barcode, "stock": p.stock} for p in products])
+
+@app.route('/alerts')
+def alerts_page():
+    if 'user' not in session: return redirect(url_for('login'))
+    out_of_stock = Product.query.filter(Product.stock == 0).all()
+    low_stock = Product.query.filter(Product.stock > 0, Product.stock <= Product.min_limit).all()
+    return render_template('alerts.html', out_of_stock_count=len(out_of_stock), low_stock_count=len(low_stock),
+                           low_stock_items=low_stock)
+
+
+@app.route('/scanner')
+def scanner_page():
+    if 'user' not in session: return redirect(url_for('login'))
+    return render_template('scanner.html')
+
+
+# --- API & ACTIONS ---
 
 @app.route('/api/check_barcode/<barcode>')
 def check_barcode(barcode):
     p = Product.query.filter_by(barcode=barcode).first()
-    if p: return jsonify({"status": "exists", "id": p.id, "name": p.name, "stock": p.stock})
-    return jsonify({"status": "new"})
+    if p:
+        return jsonify({"status": "exists", "name": p.name, "stock": p.stock})
+    return jsonify({"status": "not_found"})
 
-@app.route('/add_department', methods=['POST'])
-def add_department():
-    name = request.form.get('dept_name')
-    if name and not Department.query.filter_by(name=name).first():
-        db.session.add(Department(name=name))
+
+@app.route('/api/categories')
+def get_categories():
+    cats = Category.query.all()
+    return jsonify([{"id": c.id, "name": c.name, "type": c.type} for c in cats])
+
+
+@app.route('/api/add_category', methods=['POST'])
+def add_category():
+    name = request.form.get('name')
+    cat_type = request.form.get('type')
+    if name and not Category.query.filter_by(name=name).first():
+        db.session.add(Category(name=name, type=cat_type))
         db.session.commit()
-        return jsonify({"status": "success", "name": name})
+        return jsonify({"status": "success"})
     return jsonify({"status": "error"})
+
 
 @app.route('/register_product', methods=['POST'])
 def register_product():
-    new_p = Product(barcode=request.form.get('barcode'), name=request.form.get('name'), stock=int(request.form.get('stock') or 0), min_limit=int(request.form.get('min_limit') or 5), acquisition_type=request.form.get('acquisition_type'), source_name=request.form.get('source_name'), cost_price=float(request.form.get('cost_price') or 0.0))
+    new_p = Product(
+        name=request.form.get('name').upper(),
+        sku=request.form.get('sku'),
+        barcode=request.form.get('barcode'),
+        unit=request.form.get('unit'),
+        stock=0,
+        min_limit=int(request.form.get('min_limit') or 10),
+        cost_price=float(request.form.get('cost_price') or 0.0),
+        description=request.form.get('description')
+    )
     db.session.add(new_p)
     db.session.commit()
     flash("Asset Registered", "success")
-    return redirect(url_for('dashboard'))
+    return redirect(url_for('inventory'))
+
 
 @app.route('/update_stock', methods=['POST'])
 def update_stock():
-    product = Product.query.get(int(request.form.get('item_id')))
-    type = request.form.get('type')
-    qty = int(request.form.get('qty'))
-    product.stock = (product.stock + qty) if type == 'in' else (product.stock - qty)
-    log = Transaction(item_name=product.name, dept=request.form.get('dept'), trans_type=type.upper(), qty=qty, authorized_by=request.form.get('authorized_by', 'System'), condition=request.form.get('condition', 'Good'))
+    item_id = request.form.get('item_id')
+    trans_type = request.form.get('type')  # 'in' or 'out'
+    qty_val = int(request.form.get('qty') or 0)
+    product = Product.query.get(item_id)
+
+    if not product:
+        flash("Item not found", "error")
+        return redirect(request.referrer)
+
+    if trans_type == 'in':
+        product.stock += qty_val
+    else:
+        if product.stock < qty_val:
+            flash(f"Insufficient stock! Available: {product.stock}", "error")
+            return redirect(request.referrer)
+        product.stock -= qty_val
+
+    log = Transaction(
+        item_name=product.name,
+        dept=request.form.get('dept', 'General'),
+        trans_type=trans_type.upper(),
+        qty=qty_val,
+        voucher_no=request.form.get('voucher_no'),
+        batch_no=request.form.get('batch_no'),
+        expiry_date=request.form.get('expiry_date'),
+        authorized_by=session.get('user', 'Staff')
+    )
     db.session.add(log)
     db.session.commit()
-    flash("Inventory Updated", "success")
+    flash(f"Stock {trans_type.upper()} recorded", "success")
     return redirect(url_for('dashboard'))
+
 
 @app.route('/logout')
 def logout():
     session.clear()
     return redirect(url_for('login'))
+import logging
+# This silences the specific logging shutdown error in some Python environments
+logging.raiseExceptions = False
 
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5000)))

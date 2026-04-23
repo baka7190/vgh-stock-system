@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block title %}Reports | VGH Stock{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 py-lg-5">
+    <div class="mb-4">
+        <h2 class="fw-bold text-dark m-0">Reports & Analytics</h2>
+        <p class="text-muted small">Insights into stock movement, consumption, and inventory health</p>
+    </div>
+
+    <div class="bg-light p-1 rounded-4 d-inline-flex mb-4" style="background-color: #e2e8f0 !important;">
+        <button class="btn btn-white bg-white shadow-sm rounded-3 px-4 fw-bold text-sm">Overview</button>
+        <button class="btn btn-transparent text-muted px-4 fw-bold text-sm">Consumption</button>
+        <button class="btn btn-transparent text-muted px-4 fw-bold text-sm">Stock Levels</button>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm p-4 h-100 rounded-4">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <p class="text-muted small mb-1">Total Items</p>
+                        <h2 class="fw-bold mb-1 text-success">{{ total_items }}</h2>
+                        <p class="text-muted x-small mb-0">Active items</p>
+                    </div>
+                    <div class="rounded-3 p-2 d-flex align-items-center justify-content-center bg-success bg-opacity-10" style="width: 40px; height: 40px;">
+                        <i data-lucide="package" class="text-success" size="20"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm p-4 h-100 rounded-4">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <p class="text-muted small mb-1">Inventory Value</p>
+                        <h2 class="fw-bold mb-1 text-success">K {{ total_value }}</h2>
+                        <p class="text-muted x-small mb-0">Estimated total</p>
+                    </div>
+                    <div class="rounded-3 p-2 d-flex align-items-center justify-content-center bg-success bg-opacity-10" style="width: 40px; height: 40px;">
+                        <i data-lucide="dollar-sign" class="text-success" size="20"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm p-4 h-100 rounded-4">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <p class="text-muted small mb-1">Low Stock Alerts</p>
+                        <h2 class="fw-bold mb-1 text-warning">{{ low_stock_count }}</h2>
+                        <p class="text-muted x-small mb-0">0 critical, {{ low_stock_count }} warning</p>
+                    </div>
+                    <div class="rounded-3 p-2 d-flex align-items-center justify-content-center bg-warning bg-opacity-10" style="width: 40px; height: 40px;">
+                        <i data-lucide="alert-triangle" class="text-warning" size="20"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm p-4 h-100 rounded-4">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <p class="text-muted small mb-1">Expiry Alerts</p>
+                        <h2 class="fw-bold mb-1 text-warning">0</h2>
+                        <p class="text-muted x-small mb-0">0 expired, 0 expiring soon</p>
+                    </div>
+                    <div class="rounded-3 p-2 d-flex align-items-center justify-content-center bg-warning bg-opacity-10" style="width: 40px; height: 40px;">
+                        <i data-lucide="activity" class="text-warning" size="20"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 mb-4 p-4">
+        <h6 class="fw-bold text-dark mb-4">Stock Movement — Last 6 Months</h6>
+        <div style="height: 300px;">
+            <canvas id="movementChart"></canvas>
+        </div>
+        <div class="d-flex justify-content-center gap-4 mt-3">
+            <small class="fw-bold text-success"><i class="bi bi-square-fill me-1"></i> Stock In</small>
+            <small class="fw-bold text-danger"><i class="bi bi-square-fill me-1"></i> Stock Out</small>
+            <small class="fw-bold text-warning"><i class="bi bi-square-fill me-1"></i> Adjustments</small>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+                <h6 class="fw-bold text-dark mb-4">Stock Health</h6>
+                <div style="height: 250px;" class="d-flex align-items-center justify-content-center">
+                    <canvas id="healthChart"></canvas>
+                </div>
+                <div class="d-flex justify-content-center gap-3 mt-3">
+                    <small class="text-danger fw-bold">● Critical</small>
+                    <small class="text-warning fw-bold">● Warning</small>
+                    <small class="text-success fw-bold">● Healthy</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+                <h6 class="fw-bold text-dark mb-4">Value by Category</h6>
+                <div style="height: 250px;">
+                    <canvas id="categoryValueChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Stock Movement Line Chart
+    const ctxMove = document.getElementById('movementChart').getContext('2d');
+    new Chart(ctxMove, {
+        type: 'line',
+        data: {
+            labels: ['Nov 25', 'Dec 25', 'Jan 26', 'Feb 26', 'Mar 26', 'Apr 26'],
+            datasets: [
+                { label: 'Stock In', data: [0, 0, 0, 0, 0, 0], borderColor: '#10b981', tension: 0.3, pointRadius: 0 },
+                { label: 'Stock Out', data: [0, 0, 0, 0, 0, 0], borderColor: '#ef4444', tension: 0.3, pointRadius: 0 },
+                { label: 'Adjustments', data: [0, 0, 0, 0, 0, 0], borderColor: '#f59e0b', tension: 0.3, pointRadius: 0 }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, max: 4, grid: { borderDash: [5, 5] } },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+
+    // Stock Health Pie Chart
+    const ctxHealth = document.getElementById('healthChart').getContext('2d');
+    new Chart(ctxHealth, {
+        type: 'doughnut',
+        data: {
+            datasets: [{
+                data: [1, 1, 8],
+                backgroundColor: ['#ef4444', '#f59e0b', '#10b981'],
+                borderWidth: 0
+            }]
+        },
+        options: { cutout: '70%', plugins: { legend: { display: false } } }
+    });
+
+    // Value by Category Bar Chart
+    const ctxCat = document.getElementById('categoryValueChart').getContext('2d');
+    new Chart(ctxCat, {
+        type: 'bar',
+        data: {
+            labels: ['Medical', 'Pharma', 'Equip'],
+            datasets: [{
+                data: [0, 0, 0],
+                backgroundColor: '#10b981',
+                borderRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true }, x: { grid: { display: false } } }
+        }
+    });
+</script>
+
+<style>
+    .x-small { font-size: 11px; }
+</style>
+{% endblock %}

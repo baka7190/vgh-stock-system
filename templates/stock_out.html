@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}Stock Out | VGH Stock{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 py-lg-5">
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <div>
+            <h2 class="fw-bold text-dark m-0">Stock Out</h2>
+            <p class="text-muted small mb-0">Record stock issued to departments</p>
+        </div>
+        <div>
+            <button onclick="toggleModal('stockOutModal')" class="btn btn-danger rounded-3 px-4 py-2 d-flex align-items-center gap-2 font-bold shadow-sm" style="background-color: #d1003d; border: none;">
+                <i data-lucide="package-minus" size="20"></i> Record Stock Out
+            </button>
+        </div>
+    </div>
+
+    <div class="d-flex flex-column align-items-center justify-content-center" style="min-height: 60vh;">
+        {% if transactions %}
+            <div class="card border-0 shadow-sm rounded-4 w-100 overflow-hidden">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light text-muted small text-uppercase">
+                            <tr>
+                                <th class="ps-4 py-3">Date & Time</th>
+                                <th>Item Issued</th>
+                                <th>Quantity</th>
+                                <th>Reference</th>
+                                <th class="pe-4 text-end">Department / Ward</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for t in transactions if t.trans_type == 'OUT' %}
+                            <tr class="border-bottom">
+                                <td class="ps-4 text-muted small">{{ t.timestamp.strftime('%d %b %Y, %H:%M') }}</td>
+                                <td class="fw-bold text-dark">{{ t.item_name }}</td>
+                                <td class="text-danger fw-bold">- {{ t.qty }}</td>
+                                <td class="text-muted small">{{ t.voucher_no or 'N/A' }}</td>
+                                <td class="pe-4 text-end text-muted small fw-bold">{{ t.dept }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% else %}
+            <div class="text-center animate__animated animate__fadeIn">
+                <div class="bg-light rounded-4 d-inline-flex p-3 mb-4 shadow-sm">
+                    <i data-lucide="activity" size="32" class="text-dark"></i>
+                </div>
+                <h4 class="fw-bold text-dark mb-2">No stock out transactions</h4>
+                <p class="text-muted">Record your first stock issue to a department.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<div id="stockOutModal" class="glass-modal">
+    <div class="bg-white rounded-[1.5rem] p-5 max-w-lg w-100 shadow-2xl" style="border-radius: 1.5rem; max-width: 600px;">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h5 class="fw-bold m-0 text-dark d-flex align-items-center gap-2">
+                <div class="bg-danger bg-opacity-10 rounded-circle p-1" style="color: #ff3b6b;">
+                    <i data-lucide="minus" size="18"></i>
+                </div>
+                Record Stock Out
+            </h5>
+            <button onclick="toggleModal('stockOutModal')" class="btn-close shadow-none"></button>
+        </div>
+
+        <form action="/update_stock" method="POST" class="row g-3 text-start">
+            <input type="hidden" name="type" value="out">
+
+            <div class="col-12">
+                <label class="form-label fw-bold small">Item <span class="text-danger">*</span></label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0 rounded-start-3">
+                        <i data-lucide="search" size="16" class="text-muted"></i>
+                    </span>
+                    <select name="item_id" class="form-select border-start-0 border-success border-opacity-50 bg-white rounded-end-3" required>
+                        <option value="" disabled selected>Search items...</option>
+                        {% for item in inventory %}
+                        <option value="{{ item.id }}">{{ item.name }} (Stock: {{ item.stock }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label fw-bold small">Quantity <span class="text-danger">*</span></label>
+                <input type="number" name="qty" placeholder="0" required class="form-control bg-white rounded-3">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-bold small">Reference / Req. No.</label>
+                <input type="text" name="voucher_no" placeholder="e.g. REQ-001" class="form-control bg-white rounded-3">
+            </div>
+
+            <div class="col-12">
+                <label class="form-label fw-bold small">Department / Ward</label>
+                <select name="dept" class="form-select bg-white rounded-3">
+                    <option selected>No department</option>
+                    {% for d in depts %}
+                    <option value="{{ d.name }}">{{ d.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-12">
+                <label class="form-label fw-bold small">Notes</label>
+                <textarea name="notes" rows="3" placeholder="Optional notes..." class="form-control bg-white rounded-3"></textarea>
+            </div>
+
+            <div class="col-12 d-flex justify-content-end gap-3 pt-4">
+                <button type="button" onclick="toggleModal('stockOutModal')" class="btn btn-link text-dark fw-bold text-decoration-none">Cancel</button>
+                <button type="submit" class="btn btn-danger fw-bold px-4 py-2 rounded-3" style="background: #ff004c; border: none;">Record Stock Out</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

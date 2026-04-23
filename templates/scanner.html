@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}Scanner | VGH Stock{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 py-lg-5">
+    <div class="mb-4">
+        <div class="d-flex align-items-center gap-3 mb-1">
+            <i data-lucide="scan" class="text-success" size="28"></i>
+            <h2 class="fw-bold text-dark m-0">Barcode Scanner</h2>
+        </div>
+        <p class="text-muted small">Scan or enter a barcode to look up inventory items quickly</p>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-8">
+
+            <div class="bg-light p-1 rounded-4 d-flex mb-4" style="max-width: 400px; margin: 0 auto;">
+                <button onclick="switchTab('camera')" id="tab-camera" class="btn flex-fill rounded-3 fw-bold py-2 shadow-sm bg-white">
+                    <i data-lucide="camera" size="16" class="me-2"></i> Camera Scan
+                </button>
+                <button onclick="switchTab('manual')" id="tab-manual" class="btn flex-fill rounded-3 fw-bold py-2 text-muted">
+                    <i data-lucide="keyboard" size="16" class="me-2"></i> Manual Entry
+                </button>
+            </div>
+
+            <div id="camera-section">
+                <div class="alert alert-warning border-0 rounded-4 p-2 d-flex align-items-center gap-3 mb-3 text-center justify-content-center" style="background-color: #fffbeb; color: #92400e; font-size: 11px;">
+                    <i data-lucide="alert-triangle" size="14"></i>
+                    <span>Camera scanning requires the published app. It may not work in the preview.</span>
+                </div>
+
+                <div class="bg-dark rounded-4 overflow-hidden position-relative shadow-lg mb-3" style="aspect-ratio: 4/3; background-color: #000;">
+                    <div id="reader" style="width: 100%;"></div>
+
+                    <div id="scanner-overlay" class="position-absolute top-50 start-50 translate-middle d-none text-center">
+                        <div class="rounded-4 p-3 d-flex flex-column align-items-center" style="background: rgba(10, 148, 36, 0.8); color: white;">
+                            <i data-lucide="scan" size="32"></i>
+                            <span class="small fw-bold mt-1">Detected</span>
+                            <span id="detected-code" class="h6 fw-bold mb-0">...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <button id="scan-again-btn" onclick="startScanning()" class="btn btn-light w-100 py-2 rounded-3 mb-3 fw-bold border d-none">
+                    <i data-lucide="refresh-cw" size="16" class="me-2"></i> Scan Again
+                </button>
+
+                <div id="result-container" class="mt-4 d-none">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <i data-lucide="check-circle" class="text-success" size="18"></i>
+                        <span class="small fw-bold">Scan Result</span>
+                        <span id="display-result-code" class="text-muted small"></span>
+                    </div>
+
+                    <div id="not-found-card" class="card border-danger border-opacity-25 rounded-4 p-4 text-center d-none" style="background: #fffafa;">
+                        <div class="bg-danger bg-opacity-10 rounded-circle p-2 d-inline-flex mb-3">
+                            <i data-lucide="x-circle" class="text-danger" size="24"></i>
+                        </div>
+                        <h5 class="fw-bold text-dark">No item found</h5>
+                        <p class="text-muted small">Barcode <span id="error-code" class="fw-bold"></span> is not registered in the system.</p>
+                        <button onclick="openAddInventory()" class="btn btn-success rounded-3 px-4 py-2 mt-2 fw-bold" style="background-color: #0a9424;">
+                            <i data-lucide="package" size="16" class="me-2"></i> Add to Inventory
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <p class="text-center text-muted small mt-4 px-5">
+                Point the camera at a barcode or QR code. Supports Code 128, Code 39, EAN, QR, and more.
+            </p>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/html5-qrcode"></script>
+<script>
+    let html5QrCode = new Html5Qrcode("reader");
+    let isScanning = false;
+
+    window.addEventListener('load', () => {
+        startScanning(); // Auto-start on load
+    });
+
+    function startScanning() {
+        if(isScanning) return;
+
+        document.getElementById('result-container').classList.add('d-none');
+        document.getElementById('scan-again-btn').classList.add('d-none');
+        document.getElementById('scanner-overlay').classList.add('d-none');
+
+        html5QrCode.start(
+            { facingMode: "environment" },
+            {
+                fps: 20, // High sensitivity
+                qrbox: { width: 280, height: 180 },
+                aspectRatio: 1.333334
+            },
+            onScanSuccess
+        ).then(() => isScanning = true);
+    }
+
+    function onScanSuccess(decodedText) {
+        // Show detection overlay
+        document.getElementById('scanner-overlay').classList.remove('d-none');
+        document.getElementById('detected-code').innerText = decodedText;
+
+        // Stop scanning to process
+        html5QrCode.stop().then(() => {
+            isScanning = false;
+            checkDatabase(decodedText);
+        });
+    }
+
+    function checkDatabase(code) {
+        document.getElementById('result-container').classList.remove('d-none');
+        document.getElementById('display-result-code').innerText = code;
+        document.getElementById('scan-again-btn').classList.remove('d-none');
+
+        fetch(`/api/check_barcode/${code}`)
+            .then(r => r.json())
+            .then(data => {
+                if(data.status === "exists") {
+                    // Redirect directly to item view or prompt for stock-in/out
+                    window.location.href = `/inventory?search=${code}`;
+                } else {
+                    // Show the "No item found" UI from your screenshot
+                    document.getElementById('not-found-card').classList.remove('d-none');
+                    document.getElementById('error-code').innerText = code;
+                    window.scannedCode = code; // Save for the 'Add' button
+                }
+            });
+    }
+
+    function openAddInventory() {
+        window.location.href = `/inventory?new_barcode=${window.scannedCode}`;
+    }
+
+    function switchTab(type) {
+        if(type === 'manual') {
+            html5QrCode.stop().then(() => {
+                isScanning = false;
+                document.getElementById('camera-section').classList.add('d-none');
+                // Implement manual section showing logic here
+            });
+        }
+    }
+</script>
+{% endblock %}
