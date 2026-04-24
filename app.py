@@ -11,7 +11,7 @@ app.secret_key = 'vgh_hospital_secure_key_2026'
 # Silence specific logging shutdown errors in some Python environments
 logging.raiseExceptions = False
 PNG_TIMEZONE = pytz.timezone('Pacific/Port_Moresby')
-MAINTENANCE_TIME = datetime(2026, 4, 24, 21, 50)
+MAINTENANCE_TARGET = PNG_TIMEZONE.localize(datetime(2026, 4, 24, 21, 53))
 
 
 @app.before_request
@@ -19,13 +19,14 @@ def maintenance_gatekeeper():
     if request.path.startswith('/static') or request.path == '/logout':
         return
 
-    # Get the CURRENT time in PNG
+    # current_time_png is "Aware" (has timezone info)
     current_time_png = datetime.now(PNG_TIMEZONE)
 
-    if current_time_png >= MAINTENANCE_TIME:
+    # Now both sides of the >= are "Aware"
+    if current_time_png >= MAINTENANCE_TARGET:
         return render_template('maintenance.html',
-                               shutdown_date=MAINTENANCE_TIME.strftime("%d %b %Y"),
-                               shutdown_time=MAINTENANCE_TIME.strftime("%I:%M %p"))
+                               shutdown_date=MAINTENANCE_TARGET.strftime("%d %b %Y"),
+                               shutdown_time=MAINTENANCE_TARGET.strftime("%I:%M %p"))
 
 
 # --- DATABASE PERSISTENCE (RENDER & LOCAL) ---
