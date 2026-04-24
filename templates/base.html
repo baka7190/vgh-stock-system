@@ -124,14 +124,89 @@
             }
         }
         #modal-reader video, #reader video {
-    object-fit: cover !important;
-    border-radius: 12px;
-}
+            object-fit: cover !important;
+            border-radius: 12px;
+        }
 
-/* Adds a pulse effect to the scanning area to show it's active */
-#modal-reader__scan_region {
-    border: 2px solid var(--vgh-green) !important;
-    box-shadow: 0 0 15px rgba(10, 148, 36, 0.4);
+        /* Adds a pulse effect to the scanning area to show it's active */
+        #modal-reader__scan_region {
+            border: 2px solid var(--vgh-green) !important;
+            box-shadow: 0 0 15px rgba(10, 148, 36, 0.4);
+        }
+        /* Blinking Red Dot */
+        .alert-dot {
+            width: 10px;
+            height: 10px;
+            background-color: #ff3b3b;
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 0 rgba(255, 59, 59, 0.4);
+            animation: blink-red 1.5s infinite;
+        }
+
+        @keyframes blink-red {
+            0% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(255, 59, 59, 0.7);
+            }
+            70% {
+                transform: scale(1);
+                box-shadow: 0 0 0 10px rgba(255, 59, 59, 0);
+            }
+            100% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(255, 59, 59, 0);
+            }
+        }
+        /* Dynamic Scanner UI */
+        #reader__scan_region {
+            border: 2px solid rgba(10, 148, 36, 0.3) !important;
+            border-radius: 20px;
+            position: relative;
+        }
+
+        /* The Animated Laser Line */
+        #reader__scan_region::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: #0a9424;
+            box-shadow: 0 0 15px #0a9424;
+            animation: scanning-laser 2.5s infinite ease-in-out;
+            z-index: 20;
+        }
+
+        /* The Moving Corner Brackets Effect */
+        #reader__scan_region {
+            background:
+                linear-gradient(to right, #0a9424 3px, transparent 3px) 0 0,
+                linear-gradient(to right, #0a9424 3px, transparent 3px) 0 100%,
+                linear-gradient(to left, #0a9424 3px, transparent 3px) 100% 0,
+                linear-gradient(to left, #0a9424 3px, transparent 3px) 100% 100%,
+                linear-gradient(to bottom, #0a9424 3px, transparent 3px) 0 0,
+                linear-gradient(to bottom, #0a9424 3px, transparent 3px) 100% 0,
+                linear-gradient(to top, #0a9424 3px, transparent 3px) 0 100%,
+                linear-gradient(to top, #0a9424 3px, transparent 3px) 100% 100%;
+            background-repeat: no-repeat;
+            background-size: 40px 40px; /* Length of the corner edges */
+            animation: pulse-corners 2s infinite alternate;
+        }
+
+        @keyframes scanning-laser {
+            0% { top: 0%; }
+            50% { top: 100%; }
+            100% { top: 0%; }
+        }
+
+        @keyframes pulse-corners {
+            from { transform: scale(1); opacity: 0.8; }
+            to { transform: scale(1.02); opacity: 1; }
+        }
+        #modalScanner {
+    z-index: 9999 !important; /* Ensure it sits on top of everything */
 }
     </style>
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
@@ -176,7 +251,14 @@
                 <i data-lucide="scan"></i> Scanner
             </a>
             <a href="/alerts" class="nav-link {% if request.path == '/alerts' %}active{% endif %}">
-                <i data-lucide="bell"></i> Alerts
+                <div class="d-flex align-items-center justify-content-between w-100">
+                    <div class="d-flex align-items-center gap-3">
+                        <i data-lucide="bell"></i> Alerts
+                    </div>
+                    {% if sidebar_alert_count > 0 %}
+                    <span class="alert-dot"></span>
+                    {% endif %}
+                </div>
             </a>
             <a href="/reports" class="nav-link {% if request.path == '/reports' %}active{% endif %}">
                 <i data-lucide="bar-chart-3"></i> Reports
@@ -247,71 +329,136 @@
     </div>
 
     <div id="regModal" class="glass-modal">
+        <div class="bg-white rounded-[1.5rem] p-4 p-md-5 max-w-lg w-100 shadow-2xl" style="border-radius: 1.5rem; max-width: 600px;">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4 class="fw-bold m-0 text-dark">Add New Item</h4>
+                <button onclick="toggleModal('regModal')" class="btn-close shadow-none"></button>
+            </div>
+            <form action="/register_product" method="POST" class="row g-3 text-start">
+    <div class="col-12">
+        <label class="form-label fw-bold small text-muted">Step 1: Scan Barcode</label>
+        <div class="input-group">
+            <input type="text" id="reg_barcode" name="barcode" placeholder="Scan item barcode..." class="form-control bg-light shadow-none">
+            <button type="button" onclick="startModalScanner()" class="btn btn-outline-success px-3 d-flex align-items-center">
+                <i data-lucide="scan" size="18"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <label class="form-label fw-bold small">Step 2: Item Name <span class="text-danger">*</span></label>
+        <input type="text" name="name" placeholder="e.g. COCA COLA 300ML" required class="form-control rounded-3 shadow-none">
+    </div>
+
+    <div class="col-md-6">
+        <label class="form-label fw-bold small">Step 3: Category <span class="text-danger">*</span></label>
+        <input type="text" name="category" id="reg_category_input" list="regCategoryOptions" placeholder="Select category..." class="form-control bg-light shadow-none" required>
+        <datalist id="regCategoryOptions"></datalist>
+    </div>
+
+    <div class="col-md-6">
+        <label class="form-label fw-bold small">Generated Item Code</label>
+        <input type="text" name="sku" placeholder="Auto-generated..." required class="form-control bg-light shadow-none" readonly style="cursor: not-allowed;">
+        <small class="text-muted" style="font-size: 10px;">Based on category choice</small>
+    </div>
+
+    <hr class="my-3 opacity-10">
+
+    <div class="col-md-4">
+        <label class="form-label fw-bold small">Unit Type</label>
+        <select name="unit" class="form-select shadow-none">
+            <option value="Pieces">Single Pieces</option>
+            <option value="Boxes">Boxes</option>
+            <option value="Vials">Vials</option>
+        </select>
+    </div>
+    <div class="col-md-4">
+        <label class="form-label fw-bold small">Opening Stock</label>
+        <input type="number" name="stock" value="0" min="0" class="form-control shadow-none">
+    </div>
+    <div class="col-md-4">
+        <label class="form-label fw-bold small">Min Limit</label>
+        <input type="number" name="min_limit" value="10" class="form-control shadow-none">
+    </div>
+
+    <div class="col-12 d-flex justify-content-end gap-3 pt-4">
+        <button type="button" onclick="toggleModal('regModal')" class="btn btn-link text-dark fw-bold text-decoration-none">Cancel</button>
+        <button type="submit" class="btn btn-success fw-bold px-4 py-2 rounded-3" style="background: #066d1a; border: none;">Add Item</button>
+    </div>
+</form>
+        </div>
+    </div>
+<div id="editModal" class="glass-modal">
     <div class="bg-white rounded-[1.5rem] p-4 p-md-5 max-w-lg w-100 shadow-2xl" style="border-radius: 1.5rem; max-width: 600px;">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h4 class="fw-bold m-0 text-dark">Add New Item</h4>
-            <button onclick="toggleModal('regModal')" class="btn-close shadow-none"></button>
+            <h4 class="fw-bold m-0 text-dark">Edit Item Details</h4>
+            <button onclick="toggleModal('editModal')" class="btn-close shadow-none"></button>
         </div>
-        <form action="/register_product" method="POST" class="row g-3 text-start">
-            <div class="col-12">
-                <label class="form-label fw-bold small">Item Name <span class="text-danger">*</span></label>
-                <input type="text" name="name" placeholder="e.g. Surgical Gloves (Medium)" required class="form-control rounded-3 shadow-none">
-            </div>
-
-            <div class="col-md-6">
-                <label class="form-label fw-bold small">Item Code <span class="text-danger">*</span></label>
-                <input type="text" name="sku" placeholder="e.g. SG-MED-001" required class="form-control bg-light shadow-none">
-            </div>
-            <div class="col-md-6">
-                <label class="form-label fw-bold small">Barcode</label>
-                <div class="input-group">
-                    <input type="text" id="reg_barcode" name="barcode" placeholder="Scan or enter" class="form-control bg-light shadow-none">
-                    <button type="button" onclick="startModalScanner()" class="input-group-text text-success bg-light border-start-0">
-                        <i data-lucide="scan" size="18"></i>
-                    </button>
-                </div>
-            </div>
+        <form action="/update_item" method="POST" class="row g-3 text-start">
+            <input type="hidden" name="item_id" id="edit_item_id">
 
             <div class="col-12">
-                <label class="form-label fw-bold small">Category (Type New or Select) <span class="text-danger">*</span></label>
-                <input type="text" name="category" list="regCategoryOptions" id="reg_category_input" placeholder="Search or type new category..." class="form-control bg-light shadow-none" required>
-                <datalist id="regCategoryOptions">
-                    </datalist>
+                <label class="form-label fw-bold small">Item Name</label>
+                <input type="text" name="name" id="edit_name" required class="form-control rounded-3 shadow-none">
             </div>
 
             <div class="col-md-6">
-                <label class="form-label fw-bold small">Unit Type</label>
-                <select name="unit" class="form-select shadow-none">
-                    <option value="Pieces">Single Pieces</option>
-                    <option value="Boxes">Boxes / Cartons</option>
-                    <option value="Vials">Vials</option>
-                    <option value="Tablets">Tablets</option>
-                </select>
+                <label class="form-label fw-bold small">Category</label>
+                <input type="text" name="category" id="edit_category" list="regCategoryOptions" class="form-control bg-light shadow-none">
             </div>
+
             <div class="col-md-6">
-                <label class="form-label fw-bold small">Opening Stock (Qty)</label>
-                <input type="number" name="stock" value="0" min="0" class="form-control shadow-none" placeholder="How many on hand?">
+                <label class="form-label fw-bold small">Item Code (SKU)</label>
+                <input type="text" name="sku" id="edit_sku" class="form-control bg-light shadow-none">
             </div>
 
             <div class="col-md-12">
-                <label class="form-label fw-bold small">Min. Stock Level (Alert Threshold)</label>
-                <input type="number" name="min_limit" value="10" class="form-control shadow-none">
+                <label class="form-label fw-bold small">Min. Stock Alert Level</label>
+                <input type="number" name="min_limit" id="edit_min_limit" class="form-control shadow-none">
             </div>
 
             <div class="col-12 d-flex justify-content-end gap-3 pt-4">
-                <button type="button" onclick="toggleModal('regModal')" class="btn btn-link text-dark fw-bold text-decoration-none">Cancel</button>
-                <button type="submit" class="btn btn-success fw-bold px-4 py-2 rounded-3" style="background: #066d1a;">Add Item</button>
+                <button type="button" onclick="toggleModal('editModal')" class="btn btn-link text-dark fw-bold text-decoration-none">Cancel</button>
+                <button type="submit" class="btn btn-primary fw-bold px-4 py-2 rounded-3">Update Information</button>
             </div>
         </form>
     </div>
 </div>
 
     <div id="modalScanner" class="glass-modal" style="z-index: 3000;">
-        <div class="bg-dark rounded-4 p-3" style="max-width: 400px; width: 90%;"><div id="modal-reader"></div><button onclick="stopModalScanner()" class="btn btn-danger w-100 mt-3 fw-bold">Cancel Scan</button></div>
+        <div class="bg-dark rounded-4 p-3" style="max-width: 400px; width: 90%;">
+            <div id="modal-reader"></div>
+            <button onclick="stopModalScanner()" class="btn btn-danger w-100 mt-3 fw-bold">Cancel Scan</button>
+        </div>
     </div>
 
     <script>
         lucide.createIcons();
+        // --- OPEN EDIT MODAL WITH PRE-FILLED DATA ---
+function openEditModal(id) {
+    fetch(`/api/get_item/${id}`)
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById('edit_item_id').value = id;
+            document.getElementById('edit_name').value = data.name;
+            document.getElementById('edit_category').value = data.category;
+            document.getElementById('edit_sku').value = data.sku;
+            document.getElementById('edit_min_limit').value = data.min_limit;
+
+            toggleModal('editModal');
+        });
+}
+
+// --- DELETE CONFIRMATION ---
+function confirmDelete(id, name) {
+    if (confirm(`Are you sure you want to delete ${name}?\nThis action cannot be undone and will remove all stock history.`)) {
+        window.location.href = `/delete_item/${id}`;
+    }
+}{% if category == 'success' %}
+    <div class="alert alert-success border-0 small py-2 rounded-3 mb-4 text-center" style="background-color: #dcfce7; color: #166534;">
+        {{ message }}
+    </div>
+{% endif %}
 
         function toggleMobileMenu() {
             const sidebar = document.getElementById('sidebar');
@@ -319,18 +466,29 @@
             sidebar.classList.toggle('active');
             body.classList.toggle('sidebar-open');
         }
+        function startStockInScanner() {
+    // This calls your main scanner logic and tells it to watch the Stock In field
+    startModalScanner();
+}
 
         function toggleModal(id) {
-            const modal = document.getElementById(id);
-            if (!modal) return;
-            if (modal.style.display === "flex") {
-                modal.style.display = "none";
-            } else {
-                modal.style.display = "flex";
-                if(id === 'categoryModal') loadCategories();
-                if(id === 'regModal') loadCategoriesIntoForm();
-            }
+    const modal = document.getElementById(id);
+    if (!modal) return;
+
+    if (modal.style.display === "flex") {
+        modal.style.display = "none";
+    } else {
+        modal.style.display = "flex";
+
+        // --- CRITICAL: RE-INITIALIZE ICONS ---
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
         }
+
+        if(id === 'categoryModal') loadCategories();
+        if(id === 'regModal') loadCategoriesIntoForm();
+    }
+}
 
         function openNewCategoryForm() {
             document.getElementById('categoryModal').style.display = 'none';
@@ -338,25 +496,22 @@
         }
 
         function submitNewCategory() {
-    const name = document.getElementById('cat_name').value;
-    const type = document.getElementById('cat_type').value;
-    const f = new FormData(); f.append('name', name); f.append('type', type);
+            const name = document.getElementById('cat_name').value;
+            const type = document.getElementById('cat_type').value;
+            const f = new FormData(); f.append('name', name); f.append('type', type);
 
-    fetch('/api/add_category', { method: 'POST', body: f })
-        .then(r => r.json())
-        .then(data => {
-            if(data.status === "success") {
-                document.getElementById('saveCategoryForm').reset();
-                document.getElementById('newCategoryFormModal').style.display = 'none';
-
-                // REFRESH BOTH PLACES
-                loadCategories();         // Updates the "Manage Categories" list
-                updateInventoryFilters(); // Updates the Inventory dropdown filter
-
-                alert("Category Saved!");
-            }
-        });
-}
+            fetch('/api/add_category', { method: 'POST', body: f })
+                .then(r => r.json())
+                .then(data => {
+                    if(data.status === "success") {
+                        document.getElementById('saveCategoryForm').reset();
+                        document.getElementById('newCategoryFormModal').style.display = 'none';
+                        loadCategories();
+                        updateInventoryFilters();
+                        alert("Category Saved!");
+                    }
+                });
+        }
 
         function loadCategories() {
             fetch('/api/categories').then(r => r.json()).then(data => {
@@ -370,76 +525,106 @@
         }
 
         function loadCategoriesIntoForm() {
-    fetch('/api/categories').then(r => r.json()).then(data => {
-        const list = document.getElementById('regCategoryOptions');
-        if (list) {
-            list.innerHTML = ''; // Clear existing
-            data.forEach(c => {
-                list.innerHTML += `<option value="${c.name}">`;
+            fetch('/api/categories').then(r => r.json()).then(data => {
+                const list = document.getElementById('regCategoryOptions');
+                if (list) {
+                    list.innerHTML = '';
+                    data.forEach(c => {
+                        list.innerHTML += `<option value="${c.name}">`;
+                    });
+                }
             });
         }
-    });
-}
 
         let modalScannerObj = null;
-        // --- OPTIMIZED HIGH-SPEED SCANNER LOGIC ---
-function startModalScanner() {
+
+        function startModalScanner() {
     const modalScannerElement = document.getElementById('modalScanner');
     if (modalScannerElement) modalScannerElement.style.display = 'flex';
 
     modalScannerObj = new Html5Qrcode("modal-reader");
 
     const config = {
-        fps: 30,           // Increased from 10 to 30 for smooth, fast motion
-        qrbox: { width: 280, height: 200 }, // Optimized rectangle for barcodes
-        aspectRatio: 1.0,  // Square aspect ratio helps mobile focus
-        rememberLastUsedCamera: true,
-        supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
+        fps: 30,
+        qrbox: { width: 280, height: 200 },
+        aspectRatio: 1.0
     };
 
     modalScannerObj.start(
-        { facingMode: "environment" }, // Forces back camera
+        { facingMode: "environment" },
         config,
         (decodedText) => {
-            // Play a quick beep/haptic feedback
             playSuccessSound();
 
-            // Auto-fill the inputs
-            if (document.getElementById('reg_barcode')) document.getElementById('reg_barcode').value = decodedText;
-            if (document.getElementById('stock_in_item_input')) {
-                document.getElementById('stock_in_item_input').value = decodedText;
-                lookupItem(decodedText); // Instant lookup
+            // 1. Check if we are in the "Add New Item" Modal
+            const regBarcode = document.getElementById('reg_barcode');
+            if (regBarcode && regBarcode.offsetParent !== null) {
+                regBarcode.value = decodedText;
+                performSmartLookup(decodedText);
             }
-            if (document.getElementById('stock_out_item_input')) {
-                document.getElementById('stock_out_item_input').value = decodedText;
-                lookupStockOut(decodedText); // Instant lookup
+
+            // 2. Check if we are in the "Stock In" Modal
+            const stockInInput = document.getElementById('stock_in_item_input');
+            if (stockInInput && stockInInput.offsetParent !== null) {
+                stockInInput.value = decodedText;
+                lookupItem(decodedText);
+            }
+
+            // 3. Check if we are in the "Stock Out" Modal
+            const stockOutInput = document.getElementById('stock_out_item_input');
+            if (stockOutInput && stockOutInput.offsetParent !== null) {
+                stockOutInput.value = decodedText;
+                lookupStockOut(decodedText);
             }
 
             stopModalScanner();
         }
-    ).catch(err => {
-        console.error("Camera error:", err);
-    });
+    ).catch(err => console.error("Scanner Error:", err));
 }
 
-// Helper for instant feedback
-function playSuccessSound() {
-    try {
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const oscillator = audioCtx.createOscillator();
-        const gainNode = audioCtx.createGain();
-        oscillator.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
-        oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // High pitch beep
-        gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
-        oscillator.start();
-        oscillator.stop(audioCtx.currentTime + 0.1);
-    } catch(e) {
-        // Fallback for browsers that block auto-audio
-        if (navigator.vibrate) navigator.vibrate(50);
-    }
-}
+        function performSmartLookup(barcodeVal) {
+            if (barcodeVal.length >= 8) {
+                fetch(`/api/check_barcode/${barcodeVal}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.status === "exists") {
+                            document.querySelector('#regModal input[name="name"]').value = data.name;
+                            document.querySelector('#regModal input[name="sku"]').value = data.sku;
+                            document.querySelector('#regModal input[name="category"]').value = data.category;
+
+                            const barcodeInput = document.getElementById('reg_barcode');
+                            barcodeInput.style.border = "2px solid #0a9424";
+                            setTimeout(() => barcodeInput.style.border = "", 2000);
+                        }
+                    });
+            }
+        }
+
+        // Add Manual Input Listener for Smart Lookup
+        document.addEventListener('DOMContentLoaded', () => {
+            const regBarcodeField = document.getElementById('reg_barcode');
+            if (regBarcodeField) {
+                regBarcodeField.addEventListener('input', (e) => performSmartLookup(e.target.value));
+            }
+        });
+
+        function playSuccessSound() {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
+                gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + 0.1);
+            } catch(e) {
+                if (navigator.vibrate) navigator.vibrate(50);
+            }
+        }
+
         function stopModalScanner() {
             if(modalScannerObj) modalScannerObj.stop().then(() => { document.getElementById('modalScanner').style.display = 'none'; });
         }
@@ -448,23 +633,18 @@ function playSuccessSound() {
         const DB_NAME = 'VGH_Offline_DB';
         const STORE_NAME = 'sync_queue';
 
-        // 1. Initialize the local browser database
         const dbRequest = indexedDB.open(DB_NAME, 1);
         dbRequest.onupgradeneeded = (e) => {
             e.target.result.createObjectStore(STORE_NAME, { autoIncrement: true });
         };
 
-        // 2. Intercept Form Submissions
         document.addEventListener('submit', async (e) => {
-            // Check if form targets stock updates
             if (e.target.action && e.target.action.includes('/update_stock')) {
                 if (!navigator.onLine) {
                     e.preventDefault();
-
                     const formData = new FormData(e.target);
                     const data = Object.fromEntries(formData.entries());
 
-                    // Save to phone's memory
                     const db = await new Promise(res => {
                         const req = indexedDB.open(DB_NAME);
                         req.onsuccess = () => res(req.result);
@@ -477,17 +657,13 @@ function playSuccessSound() {
                     });
 
                     alert("⚠️ No Internet. Transaction saved locally and will sync when back online.");
-
-                    // Close the modal safely
                     const modalElement = e.target.closest('.glass-modal');
                     if (modalElement) toggleModal(modalElement.id);
                 }
             }
         });
 
-        // 3. Background Sync (When internet returns)
         window.addEventListener('online', async () => {
-            console.log("Internet restored! Syncing data...");
             const db = await new Promise(res => {
                 const req = indexedDB.open(DB_NAME);
                 req.onsuccess = () => res(req.result);
@@ -504,152 +680,122 @@ function playSuccessSound() {
 
             for (const record of allRecords) {
                 try {
-                    const response = await fetch('/update_stock', {
+                    await fetch('/update_stock', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                         body: new URLSearchParams(record.data)
                     });
-
-                    if (response.ok) {
-                        console.log("Synced 1 record successfully");
-                    }
                 } catch (err) {
                     console.error("Sync failed", err);
                 }
             }
 
-            // Clear the store after processing
             const clearTx = db.transaction(STORE_NAME, 'readwrite');
             clearTx.objectStore(STORE_NAME).clear();
             alert("✅ All offline transactions have been synced to the server!");
         });
-        // Function to update the Inventory Category Filter
-function updateInventoryFilters() {
-    const filterSelect = document.getElementById('inventoryCategoryFilter');
-    if (!filterSelect) return; // Only run if we are on the Inventory page
 
-    fetch('/api/categories')
-        .then(r => r.json())
-        .then(data => {
-            // Keep the first "All Categories" option
-            filterSelect.innerHTML = '<option selected>All Categories</option>';
+        function updateInventoryFilters() {
+            const filterSelect = document.getElementById('inventoryCategoryFilter');
+            if (!filterSelect) return;
+            fetch('/api/categories').then(r => r.json()).then(data => {
+                filterSelect.innerHTML = '<option selected>All Categories</option>';
+                data.forEach(cat => {
+                    filterSelect.innerHTML += `<option value="${cat.name}">${cat.name}</option>`;
+                });
+            });
+        }
 
-            // Add every category found in the database
-            data.forEach(cat => {
-                filterSelect.innerHTML += `<option value="${cat.name}">${cat.name}</option>`;
+        window.addEventListener('DOMContentLoaded', updateInventoryFilters);
+
+        document.getElementById('inventoryCategoryFilter')?.addEventListener('change', function() {
+            let filter = this.value.toUpperCase();
+            let rows = document.querySelectorAll("#inventoryTable tr");
+            rows.forEach(row => {
+                let catColumn = row.cells[1].textContent.toUpperCase();
+                row.style.display = (filter === "ALL CATEGORIES" || catColumn.includes(filter)) ? "" : "none";
             });
         });
-}
 
-// Run this function whenever the page finishes loading
-window.addEventListener('DOMContentLoaded', updateInventoryFilters);
+        function lookupItem(val) {
+            if (val.length < 3) return;
+            fetch(`/api/check_barcode/${val}`).then(r => r.json()).then(data => {
+                const hint = document.getElementById('item-status-hint');
+                const itemInput = document.getElementById('stock_in_item_input');
+                const hiddenId = document.getElementById('hidden_item_id');
+                const itemCodeInput = document.querySelector('#stockInModal input[name="voucher_no"]');
 
-// Also add a listener to filter the table when a category is selected
-document.getElementById('inventoryCategoryFilter')?.addEventListener('change', function() {
-    let filter = this.value.toUpperCase();
-    let rows = document.querySelectorAll("#inventoryTable tr");
-
-    rows.forEach(row => {
-        // Index 1 is usually the Category column in our table
-        let catColumn = row.cells[1].textContent.toUpperCase();
-        if (filter === "ALL CATEGORIES" || catColumn.includes(filter)) {
-            row.style.display = "";
-        } else {
-            row.style.display = "none";
+                if (data.status === "exists") {
+                    hint.innerHTML = `<span class="text-success fw-bold">✓ Found: ${data.name} (Current Stock: ${data.stock})</span>`;
+                    if(val === data.barcode) itemInput.value = data.name;
+                    if (itemCodeInput && data.sku) itemCodeInput.value = data.sku;
+                    hiddenId.value = data.id;
+                    document.querySelector('#stockInModal input[name="qty"]').focus();
+                } else {
+                    hint.innerHTML = `<span class="text-warning fw-bold">+ New Barcode detected. Please type Item Name to register.</span>`;
+                    hiddenId.value = "NEW_ITEM";
+                    if (itemCodeInput) itemCodeInput.value = "";
+                }
+            });
         }
-    });
-});
-// --- SMART STOCK-IN LOOKUP ---
-const itemInput = document.getElementById('stock_in_item_input');
-const hint = document.getElementById('item-status-hint');
-const hiddenId = document.getElementById('hidden_item_id');
 
-if (itemInput) {
-    itemInput.addEventListener('input', function() {
-        lookupItem(this.value);
-    });
-}
+        function lookupStockOut(val) {
+            if (val.length < 2) return;
+            fetch(`/api/check_barcode/${val}`).then(r => r.json()).then(data => {
+                const card = document.getElementById('item-details-card');
+                const itemCodeInput = document.querySelector('input[name="voucher_no"]');
+                if (data.status === "exists") {
+                    document.getElementById('display-item-name').innerText = data.name;
+                    document.getElementById('display-item-code').innerText = "CODE: " + (data.sku || 'N/A');
+                    document.getElementById('display-item-stock').innerText = data.stock + " units";
+                    if (itemCodeInput && data.sku) itemCodeInput.value = data.sku;
+                    card.classList.remove('d-none');
+                    document.getElementById('hidden_out_id').value = data.id;
+                    document.querySelector('input[name="qty"]').focus();
+                    currentAvailableStock = data.stock;
+                } else {
+                    card.classList.add('d-none');
+                    document.getElementById('hidden_out_id').value = "";
+                    if (itemCodeInput) itemCodeInput.value = "";
+                }
+            });
+        }
 
-function lookupItem(val) {
-    if (val.length < 3) return;
+        function validateQuantity() {
+            const requestedQty = parseInt(document.querySelector('input[name="qty"]').value) || 0;
+            const hint = document.getElementById('stock-out-hint');
+            if (document.getElementById('hidden_out_id').value && requestedQty > currentAvailableStock) {
+                hint.innerHTML = `<span class="text-danger fw-bold">⚠️ ERROR: Only ${currentAvailableStock} units available.</span>`;
+            } else if (document.getElementById('hidden_out_id').value) {
+                hint.innerHTML = `<span class="text-success fw-bold">✓ Ready.</span>`;
+            }
+        }
 
-    fetch(`/api/check_barcode/${val}`)
-        .then(r => r.json())
-        .then(data => {
-            if (data.status === "exists") {
-                hint.innerHTML = `<span class="text-success fw-bold">✓ Found: ${data.name} (Current Stock: ${data.stock})</span>`;
-                // If it exists, we use the name to keep it friendly
-                itemInput.value = data.name;
-                // Store the ID for the backend update_stock route
-                hiddenId.value = data.id;
-            } else {
-                hint.innerHTML = `<span class="text-warning fw-bold">+ New Barcode detected. Please type Item Name to register.</span>`;
-                hiddenId.value = "NEW_ITEM"; // Flag for the backend
+        // Category Prefix Logic
+        document.addEventListener('DOMContentLoaded', () => {
+            const regCategoryInput = document.getElementById('reg_category_input');
+            const skuInput = document.querySelector('#regModal input[name="sku"]');
+            if (regCategoryInput) {
+                regCategoryInput.addEventListener('change', function() {
+                    fetch(`/api/next_item_code?category=${this.value}`).then(r => r.json()).then(data => {
+                        if (skuInput) {
+                            skuInput.value = data.next_code;
+                            skuInput.style.backgroundColor = "#dcfce7";
+                            setTimeout(() => skuInput.style.backgroundColor = "", 500);
+                        }
+                    });
+                });
             }
         });
-}
-
-// Reuse your scanner logic but point it here
-function startStockInScanner() {
-    startModalScanner(); // This is your existing function
-    // Modify your onScanSuccess in base.html to handle this specific input:
-    // decodedText => { document.getElementById('stock_in_item_input').value = decodedText; lookupItem(decodedText); }
-}
-// --- SMART STOCK-OUT LOOKUP ---
-const outInput = document.getElementById('stock_out_item_input');
-const outHint = document.getElementById('stock-out-hint');
-const outHiddenId = document.getElementById('hidden_out_id');
-let currentAvailableStock = 0;
-
-if (outInput) {
-    outInput.addEventListener('input', function() {
-        lookupStockOut(this.value);
-    });
-}
-
-function lookupStockOut(val) {
-    if (val.length < 2) {
-        outHint.innerHTML = "";
-        return;
-    }
-
-    fetch(`/api/check_barcode/${val}`)
-        .then(r => r.json())
-        .then(data => {
-            if (data.status === "exists") {
-                currentAvailableStock = data.stock;
-                outHint.innerHTML = `<span class="text-success fw-bold">✓ Ready: ${data.name} | Available: ${data.stock}</span>`;
-                outHiddenId.value = data.id;
-
-                // If the user already typed a quantity, re-validate it
-                validateQuantity();
-            } else {
-                outHint.innerHTML = `<span class="text-danger fw-bold">❌ Item not found. Please check barcode or name.</span>`;
-                outHiddenId.value = "";
-            }
-        });
-}
-
-// Add validation to the Quantity field to prevent negative stock
-const qtyInput = document.querySelector('input[name="qty"]');
-if (qtyInput) {
-    qtyInput.addEventListener('input', validateQuantity);
-}
-
-function validateQuantity() {
-    const requestedQty = parseInt(qtyInput.value) || 0;
-    if (outHiddenId.value && requestedQty > currentAvailableStock) {
-        outHint.innerHTML = `<span class="text-danger fw-bold">⚠️ ERROR: Only ${currentAvailableStock} units available. Cannot issue ${requestedQty}.</span>`;
-        qtyInput.classList.add('is-invalid');
-    } else if (outHiddenId.value) {
-        outHint.innerHTML = `<span class="text-success fw-bold">✓ Ready: Available stock is sufficient.</span>`;
-        qtyInput.classList.remove('is-invalid');
-    }
-}
-
+        // --- BRIDGE FUNCTION FOR STOCK OUT SCANNER ---
 function startStockOutScanner() {
-    startModalScanner(); // Uses your global scanner
-    // You'll need to update your scanner's success callback to handle this input
+    // This tells the global scanner to open
+    startModalScanner();
+
+    // Optional: Refresh icons inside the scanner if they look weird
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
 }
     </script>
 </body>

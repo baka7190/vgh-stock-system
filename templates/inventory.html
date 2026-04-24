@@ -23,7 +23,7 @@
                 <span class="input-group-text bg-white border-end-0 rounded-start-3">
                     <i data-lucide="search" size="18" class="text-muted"></i>
                 </span>
-                <input type="text" id="inventorySearch" placeholder="Search by name or SKU..." class="form-control border-start-0 rounded-end-3 py-2 shadow-none">
+                <input type="text" id="inventorySearch" placeholder="Search by name or Item No..." class="form-control border-start-0 rounded-end-3 py-2 shadow-none">
             </div>
         </div>
         <div class="col-12 col-md-4">
@@ -59,9 +59,13 @@
                                         <span class="badge bg-light text-dark border-0 p-0 text-xs" style="font-size: 10px;">General</span>
                                     </div>
                                 </td>
-                                <td class="d-none d-md-table-cell">
-                                    <span class="badge bg-light text-dark border">General</span>
-                                </td>
+                                <td>
+    {% if item.category %}
+        <span class="badge bg-light text-dark border text-uppercase" style="font-size: 10px;">{{ item.category }}</span>
+    {% else %}
+        <span class="badge bg-light text-secondary border text-uppercase" style="font-size: 10px;">Uncategorized</span>
+    {% endif %}
+</td>
                                 <td class="text-center">
                                     <span class="fw-bold h6 mb-0">{{ item.stock }}</span>
                                     <div class="d-sm-none">
@@ -80,10 +84,16 @@
                                     {% endif %}
                                 </td>
                                 <td class="pe-3 pe-md-4 text-end">
-                                    <button class="btn btn-sm text-primary p-2">
-                                        <i data-lucide="edit-3" size="18"></i>
-                                    </button>
-                                </td>
+    <div class="d-flex justify-content-end gap-2">
+        <button onclick="openEditModal('{{ item.id }}')" class="btn btn-sm btn-outline-primary border-0 rounded-3 p-2" title="Edit Item">
+            <i data-lucide="edit-3" size="18"></i>
+        </button>
+
+        <button onclick="confirmDelete('{{ item.id }}', '{{ item.name }}')" class="btn btn-sm btn-outline-danger border-0 rounded-3 p-2" title="Delete Item">
+            <i data-lucide="trash-2" size="18"></i>
+        </button>
+    </div>
+</td>
                             </tr>
                             {% endfor %}
                         </tbody>

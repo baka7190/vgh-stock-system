@@ -85,16 +85,18 @@
             <h4 class="fw-bold text-dark mb-1">VGH STOCK CONTROL</h4>
             <p class="text-muted small">Inventory Management System</p>
         </div>
-
         {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            {% for category, message in messages %}
-              <div class="alert alert-danger border-0 small py-2 rounded-3 mb-4 text-center">
-                <i class="bi bi-exclamation-circle me-2"></i> {{ message }}
-              </div>
-            {% endfor %}
-          {% endif %}
-        {% endwith %}
+  {% if messages %}
+    {% for category, message in messages %}
+      {# ONLY show the message if it contains "Invalid" or "Log" keywords #}
+      {% if "Invalid" in message or "Log" in message or "required" in message %}
+        <div class="alert alert-danger border-0 small py-2 rounded-3 mb-4 text-center">
+            <i class="bi bi-exclamation-circle me-2"></i> {{ message }}
+        </div>
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+{% endwith %}
 
         <form action="/auth" method="POST">
             <div class="mb-3">

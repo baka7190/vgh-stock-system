@@ -33,7 +33,7 @@
                 <div class="bg-dark rounded-4 overflow-hidden position-relative shadow-lg mb-3" style="aspect-ratio: 1/1; background-color: #000; border: 4px solid #fff;">
                     <div id="reader" style="width: 100%; height: 100%; object-fit: cover;"></div>
 
-                    <div id="scanner-overlay" class="position-absolute top-50 start-50 translate-middle d-none text-center w-75">
+                    <div id="scanner-overlay" class="position-absolute top-50 start-50 translate-middle d-none text-center w-75" style="z-index: 10;">
                         <div class="rounded-4 p-3 d-flex flex-column align-items-center shadow-lg" style="background: rgba(10, 148, 36, 0.9); color: white;">
                             <i data-lucide="check-circle" size="32" class="mb-1"></i>
                             <span class="small fw-bold">Detected</span>
@@ -80,6 +80,47 @@
     </div>
 </div>
 
+<div id="scannerResultModal" class="glass-modal">
+    <div class="bg-white rounded-[1.5rem] p-4 p-md-5 max-w-lg w-100 shadow-2xl" style="border-radius: 1.5rem; max-width: 500px;">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="fw-bold m-0 text-dark">Item Information</h4>
+            <button onclick="toggleModal('scannerResultModal'); startScanning();" class="btn-close shadow-none"></button>
+        </div>
+
+        <div id="scanner-details-content" class="text-start">
+             <div class="mb-3">
+                <label class="extra-small text-muted fw-bold" style="font-size: 10px;">ITEM NAME</label>
+                <h5 id="scan-res-name" class="fw-bold text-success text-uppercase mb-0"></h5>
+             </div>
+             <div class="row mb-3">
+                <div class="col-6">
+                    <label class="extra-small text-muted fw-bold" style="font-size: 10px;">ITEM CODE</label>
+                    <div id="scan-res-sku" class="fw-bold text-dark small"></div>
+                </div>
+                <div class="col-6">
+                    <label class="extra-small text-muted fw-bold" style="font-size: 10px;">BARCODE</label>
+                    <div id="scan-res-barcode" class="text-muted small"></div>
+                </div>
+             </div>
+             <div class="row mb-3">
+                <div class="col-6">
+                    <label class="extra-small text-muted fw-bold" style="font-size: 10px;">CURRENT STOCK</label>
+                    <div id="scan-res-stock" class="h4 fw-bold text-dark mb-0"></div>
+                </div>
+                <div class="col-6">
+                    <label class="extra-small text-muted fw-bold" style="font-size: 10px;">CATEGORY</label>
+                    <div><span id="scan-res-cat" class="badge bg-light text-dark border text-uppercase" style="font-size: 10px;"></span></div>
+                </div>
+             </div>
+        </div>
+
+        <div class="pt-4 border-top d-flex gap-2">
+            <button onclick="toggleModal('scannerResultModal'); startScanning();" class="btn btn-light fw-bold w-100 py-2 rounded-3">Close</button>
+            <a id="scan-res-edit-link" href="#" class="btn btn-success fw-bold w-100 py-2 rounded-3" style="background: #0a9424; border: none;">View Inventory</a>
+        </div>
+    </div>
+</div>
+
 <script src="https://unpkg.com/html5-qrcode"></script>
 <script>
     let html5QrCode = new Html5Qrcode("reader");
@@ -97,22 +138,53 @@
         document.getElementById('scanner-overlay').classList.add('d-none');
         document.getElementById('not-found-card').classList.add('d-none');
 
+        // Play feedback sounds from base.html helper if exists
+        if(typeof playSuccessSound === "undefined") {
+            window.playSuccessSound = function() { console.log("Beep!"); };
+        }
+
         html5QrCode.start(
             { facingMode: "environment" },
             {
-                fps: 25, // Higher for better mobile responsiveness
-                qrbox: { width: 250, height: 250 },
-                aspectRatio: 1.0 // Square viewport is better for mobile
+                fps: 30, // Optimized for fast autocapture
+                qrbox: { width: 280, height: 200 }, // Rectangular for better barcode capture
+                aspectRatio: 1.0
             },
             onScanSuccess
         ).then(() => isScanning = true).catch(err => {
             console.error("Scanner failed", err);
         });
+        let qrboxFunction = function(viewfinderWidth, viewfinderHeight) {
+        let minEdgeId = Math.min(viewfinderWidth, viewfinderHeight);
+        let readingBoxWidth = minEdgeId * 0.8; // Use 80% of screen width
+        let readingBoxHeight = readingBoxWidth * 0.6; // Wider for long barcodes
+
+        return {
+            width: readingBoxWidth,
+            height: readingBoxHeight
+        };
+    }
+
+    html5QrCode.start(
+        { facingMode: "environment" },
+        {
+            fps: 40, // Maximize speed
+            qrbox: qrboxFunction, // Use the dynamic function
+            aspectRatio: 1.0,
+            showTorchButtonIfSupported: true // Helpful for dark VGH wards
+        },
+        onScanSuccess
+    ).then(() => isScanning = true).catch(err => {
+        console.error("Scanner failed", err);
+    });
     }
 
     function onScanSuccess(decodedText) {
         document.getElementById('scanner-overlay').classList.remove('d-none');
         document.getElementById('detected-code').innerText = decodedText;
+
+        // Haptic feedback
+        if (navigator.vibrate) navigator.vibrate(50);
 
         html5QrCode.stop().then(() => {
             isScanning = false;
@@ -123,17 +195,30 @@
     function checkDatabase(code) {
         if(!code) return;
 
-        document.getElementById('result-container').classList.remove('d-none');
-        document.getElementById('scan-again-btn').classList.remove('d-none');
-
         fetch(`/api/check_barcode/${code}`)
             .then(r => r.json())
             .then(data => {
                 if(data.status === "exists") {
-                    window.location.href = `/inventory?search=${code}`;
+                    // Populate Modal with data
+                    document.getElementById('scan-res-name').innerText = data.name;
+                    document.getElementById('scan-res-sku').innerText = data.sku || 'N/A';
+                    document.getElementById('scan-res-barcode').innerText = code;
+                    document.getElementById('scan-res-stock').innerText = data.stock;
+                    document.getElementById('scan-res-cat').innerText = data.category || 'General';
+
+                    // Set edit link (Assuming you have or will have an edit route)
+                    document.getElementById('scan-res-edit-link').href = `/inventory?search=${code}`;
+
+                    // Show Modal
+                    toggleModal('scannerResultModal');
+
+                    // Show "Scan Another" button in background
+                    document.getElementById('scan-again-btn').classList.remove('d-none');
                 } else {
+                    document.getElementById('result-container').classList.remove('d-none');
                     document.getElementById('not-found-card').classList.remove('d-none');
                     document.getElementById('error-code').innerText = code;
+                    document.getElementById('scan-again-btn').classList.remove('d-none');
                     window.scannedCode = code;
                 }
             });
@@ -150,15 +235,14 @@
         const manSec = document.getElementById('manual-section');
 
         if(type === 'manual') {
-            html5QrCode.stop().then(() => {
-                isScanning = false;
-                camSec.classList.add('d-none');
-                manSec.classList.remove('d-none');
-                camBtn.classList.remove('bg-white', 'shadow-sm');
-                camBtn.classList.add('text-muted');
-                manBtn.classList.add('bg-white', 'shadow-sm');
-                manBtn.classList.remove('text-muted');
-            });
+            if(isScanning) {
+                html5QrCode.stop().then(() => {
+                    isScanning = false;
+                    applyTabChange();
+                });
+            } else {
+                applyTabChange();
+            }
         } else {
             camSec.classList.remove('d-none');
             manSec.classList.add('d-none');
@@ -167,6 +251,15 @@
             camBtn.classList.add('bg-white', 'shadow-sm');
             camBtn.classList.remove('text-muted');
             startScanning();
+        }
+
+        function applyTabChange() {
+            camSec.classList.add('d-none');
+            manSec.classList.remove('d-none');
+            camBtn.classList.remove('bg-white', 'shadow-sm');
+            camBtn.classList.add('text-muted');
+            manBtn.classList.add('bg-white', 'shadow-sm');
+            manBtn.classList.remove('text-muted');
         }
     }
 </script>

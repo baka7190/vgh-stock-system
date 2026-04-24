@@ -47,7 +47,7 @@ class Product(db.Model):
     cost_price = db.Column(db.Float, default=0.0)
     description = db.Column(db.Text)
     date_added = db.Column(db.DateTime, default=datetime.now)
-
+    category = db.Column(db.String(100), default="General")
 
 class Department(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -92,6 +92,26 @@ with app.app_context():
 
 
 # --- ROUTES ---
+
+def generate_next_item_code(category_name):
+    # Take first 3 letters of category, default to 'VGH' if empty
+    prefix = (category_name[:3].upper()) if category_name else "VGH"
+
+    # Find the most recent product starting with this prefix
+    last_product = Product.query.filter(Product.sku.like(f"{prefix}-%")).order_by(Product.id.desc()).first()
+
+    if not last_product:
+        return f"{prefix}-0001"
+
+    try:
+        # Split 'PHA-0005' into ['PHA', '0005'] and increment
+        parts = last_product.sku.split('-')
+        last_num = int(parts[1])
+        new_num = last_num + 1
+        return f"{prefix}-{new_num:04d}"
+    except (IndexError, ValueError):
+        # Fallback if the format was manually changed by a user
+        return f"{prefix}-{datetime.now().strftime('%H%M')}"
 @app.route('/')
 def login(): return render_template('login.html')
 
@@ -107,7 +127,9 @@ def auth():
 
 @app.route('/dashboard')
 def dashboard():
-    if 'user' not in session: return redirect(url_for('login'))
+    if 'user' not in session:
+        session.pop('_flashes', None)
+        return redirect(url_for('login'))
     now = datetime.now()
     first_day = now.replace(day=1, hour=0, minute=0, second=0)
     inventory = Product.query.all()
@@ -168,12 +190,25 @@ def scanner_page():
 
 
 # --- API & ACTIONS ---
+@app.route('/api/next_item_code')
+def next_item_code():
+    cat = request.args.get('category', 'VGH')
+    code = generate_next_item_code(cat)
+    return jsonify({"next_code": code})
 
 @app.route('/api/check_barcode/<barcode>')
 def check_barcode(barcode):
     p = Product.query.filter_by(barcode=barcode).first()
     if p:
-        return jsonify({"status": "exists", "id": p.id, "name": p.name, "stock": p.stock})
+        return jsonify({
+            "status": "exists",
+            "id": p.id,
+            "name": p.name,
+            "stock": p.stock,
+            "sku": p.sku,  # <--- Make sure this is sent!
+            "category": p.category,  # Add this
+            "unit": p.unit
+        })
     return jsonify({"status": "not_found"})
 
 
@@ -196,46 +231,109 @@ def add_category():
 
 @app.route('/register_product', methods=['POST'])
 def register_product():
-    cat_name = request.form.get('category')
+    sku = request.form.get('sku')
+    barcode = request.form.get('barcode')
+    name = request.form.get('name').upper()
 
-    # Check if category exists; if not, create it
-    category = Category.query.filter_by(name=cat_name).first()
-    if not category and cat_name:
-        new_cat = Category(name=cat_name, type="General")
-        db.session.add(new_cat)
-        db.session.commit()
+    # 1. Check if the Item Code (SKU) already exists in the database
+    existing_sku = Product.query.filter_by(sku=sku).first()
+    if existing_sku:
+        flash(f"Error: Item Code '{sku}' is already used by {existing_sku.name}. Please use a different code.", "error")
+        return redirect(url_for('inventory'))
 
-    # Create the product with the specified stock quantity
-    new_p = Product(
-        name=request.form.get('name').upper(),
-        sku=request.form.get('sku'),
-        barcode=request.form.get('barcode'),
-        unit=request.form.get('unit'),
-        stock=int(request.form.get('stock') or 0),
-        min_limit=int(request.form.get('min_limit') or 10),
-        cost_price=float(request.form.get('cost_price') or 0.0),
-        description=request.form.get('description')
-    )
+    # 2. Check if the Barcode already exists (if a barcode was provided)
+    if barcode:
+        existing_barcode = Product.query.filter_by(barcode=barcode).first()
+        if existing_barcode:
+            flash(f"Error: Barcode '{barcode}' is already assigned to {existing_barcode.name}.", "error")
+            return redirect(url_for('inventory'))
 
-    db.session.add(new_p)
-    db.session.commit()
+    try:
+        cat_name = request.form.get('category')
 
-    # Log an initial transaction if stock was added
-    if new_p.stock > 0:
-        log = Transaction(
-            item_name=new_p.name,
-            trans_type='IN',
-            qty=new_p.stock,
-            dept='Opening Stock',
-            authorized_by=session.get('user', 'Admin')
+        # 3. Check if category exists; if not, create it
+        category = Category.query.filter_by(name=cat_name).first()
+        if not category and cat_name:
+            new_cat = Category(name=cat_name, type="General")
+            db.session.add(new_cat)
+            db.session.commit()
+
+        # 4. Create the product
+        new_p = Product(
+            name=name,
+            sku=sku,
+            barcode=barcode,
+            category=cat_name,
+            unit=request.form.get('unit'),
+            stock=int(request.form.get('stock') or 0),
+            min_limit=int(request.form.get('min_limit') or 10),
+            cost_price=float(request.form.get('cost_price') or 0.0),
+            description=request.form.get('description')
         )
-        db.session.add(log)
+
+        db.session.add(new_p)
         db.session.commit()
 
-    flash(f"{new_p.name} Registered with {new_p.stock} units.", "success")
+        # 5. Log an initial transaction if opening stock was added
+        if new_p.stock > 0:
+            log = Transaction(
+                item_name=new_p.name,
+                trans_type='IN',
+                qty=new_p.stock,
+                dept='Opening Stock',
+                authorized_by=session.get('user', 'Admin')
+            )
+            db.session.add(log)
+            db.session.commit()
+
+        flash(f"{new_p.name} Registered successfully with {new_p.stock} units.", "success")
+
+    except Exception as e:
+        db.session.rollback()
+        flash("Database Error: Could not save item. Please check your inputs.", "error")
+        print(f"Error details: {e}")
+
     return redirect(url_for('inventory'))
 
 
+@app.before_request
+def check_user_session():
+    # List of routes that don't need login
+    open_routes = ['login', 'auth', 'static']
+
+    if request.endpoint not in open_routes and 'user' not in session:
+        # CLEAR all stock/inventory messages before redirecting to login
+        session.pop('_flashes', None)
+        return redirect(url_for('login'))
+@app.route('/api/get_item/<int:id>')
+def get_item(id):
+    p = Product.query.get_or_404(id)
+    return jsonify({
+        "name": p.name,
+        "sku": p.sku,
+        "category": p.category,
+        "min_limit": p.min_limit
+    })
+
+@app.route('/update_item', methods=['POST'])
+def update_item():
+    p = Product.query.get(request.form.get('item_id'))
+    if p:
+        p.name = request.form.get('name').upper()
+        p.sku = request.form.get('sku')
+        p.category = request.form.get('category')
+        p.min_limit = int(request.form.get('min_limit'))
+        db.session.commit()
+        flash(f"Updated {p.name} successfully.", "success")
+    return redirect(url_for('inventory'))
+
+@app.route('/delete_item/<int:id>')
+def delete_item(id):
+    p = Product.query.get_or_404(id)
+    db.session.delete(p)
+    db.session.commit()
+    flash("Item deleted from inventory.", "success")
+    return redirect(url_for('inventory'))
 @app.route('/update_stock', methods=['POST'])
 def update_stock():
     item_id = request.form.get('item_id')
@@ -248,6 +346,7 @@ def update_stock():
         new_p = Product(
             name=item_identifier.upper(),
             barcode=item_identifier,
+            category=request.form.get('category', 'General'),
             sku=f"AUTO-{datetime.now().strftime('%f')}",
             stock=qty_val
         )
@@ -284,7 +383,13 @@ def update_stock():
     flash(f"Stock {trans_type} updated successfully", "success")
     return redirect(url_for('stock_in') if trans_type == 'IN' else url_for('dispatch_page'))
 
-
+@app.context_processor
+def inject_alert_counts():
+    if 'user' in session:
+        # Count items that are out of stock or below min limit
+        low_stock_count = Product.query.filter(Product.stock <= Product.min_limit).count()
+        return dict(sidebar_alert_count=low_stock_count)
+    return dict(sidebar_alert_count=0)
 @app.route('/logout')
 def logout():
     session.clear()

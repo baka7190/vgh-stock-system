@@ -24,7 +24,7 @@
                         <thead class="bg-light text-muted small text-uppercase">
                             <tr>
                                 <th class="ps-3 ps-md-4 py-3">Transaction</th>
-                                <th class="d-none d-md-table-cell">Reference</th>
+                                <th class="d-none d-md-table-cell">Item Code</th>
                                 <th class="text-center">Qty</th>
                                 <th class="pe-3 pe-md-4 text-end">Recipient</th>
                             </tr>
@@ -36,7 +36,7 @@
                                     <div class="fw-bold text-dark text-uppercase small">{{ t.item_name }}</div>
                                     <div class="text-muted" style="font-size: 11px;">
                                         {{ t.timestamp.strftime('%d %b, %H:%M') }}
-                                        <span class="d-md-none">• Req: {{ t.voucher_no or 'N/A' }}</span>
+                                        <span class="d-md-none">• Code: {{ t.voucher_no or 'N/A' }}</span>
                                     </div>
                                 </td>
                                 <td class="d-none d-md-table-cell text-muted small">{{ t.voucher_no or 'N/A' }}</td>
@@ -80,24 +80,31 @@
             <input type="hidden" name="type" value="out">
 
             <div class="col-12">
-                <label class="form-label fw-bold small">Item (Scan, Type, or Select) <span class="text-danger">*</span></label>
-                <div class="input-group">
+                <label class="form-label fw-bold small">Scan Barcode / Search Item <span class="text-danger">*</span></label>
+                <div class="input-group mb-2">
                     <span class="input-group-text bg-white border-end-0 rounded-start-3">
                         <i data-lucide="search" size="16" class="text-muted"></i>
                     </span>
-                    <input type="text" id="stock_out_item_input" list="inventoryList" name="item_identifier" class="form-control border-start-0 border-end-0 bg-white shadow-none" placeholder="Search by name or scan..." required>
+                    <input type="text" id="stock_out_item_input" list="inventoryList" name="item_identifier" class="form-control border-start-0 border-end-0 bg-white shadow-none" placeholder="Scan or type..." required>
 
-                    <datalist id="inventoryList">
-                        {% for item in inventory %}
-                        <option value="{{ item.barcode }}">{{ item.name }} ({{ item.stock }} available)</option>
-                        {% endfor %}
-                    </datalist>
-
-                    <button type="button" onclick="startStockOutScanner()" class="btn btn-outline-danger rounded-end-3 px-3">
-                        <i data-lucide="scan" size="18"></i>
-                    </button>
+                    <button type="button" onclick="startStockOutScanner()" class="btn btn-outline-danger rounded-end-3 px-3 d-flex align-items-center justify-content-center">
+    <i data-lucide="scan" size="20"></i>
+</button>
                 </div>
-                <div id="stock-out-hint" class="mt-1 small"></div>
+
+                <div id="item-details-card" class="p-3 rounded-3 border bg-light mb-3 d-none">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <div id="display-item-name" class="fw-bold text-dark text-uppercase small"></div>
+                            <div id="display-item-code" class="text-muted extra-small" style="font-size: 11px;"></div>
+                        </div>
+                        <div class="text-end">
+                            <div class="extra-small text-muted" style="font-size: 10px;">AVAILABLE</div>
+                            <div id="display-item-stock" class="fw-bold text-danger"></div>
+                        </div>
+                    </div>
+                </div>
+
                 <input type="hidden" name="item_id" id="hidden_out_id">
             </div>
 
@@ -124,38 +131,6 @@
                     <option value="Surgical Ward">
                     <option value="Pediatrics">
                 </datalist>
-            </div>
-
-            <div class="col-12">
-                <label class="form-label fw-bold small">Notes</label>
-                <textarea name="notes" rows="2" placeholder="Optional notes..." class="form-control bg-white rounded-3 shadow-none"></textarea>
-            </div>
-
-            <div class="col-12 d-flex flex-column flex-md-row justify-content-end gap-2 gap-md-3 pt-3">
-                <button type="button" onclick="toggleModal('stockOutModal')" class="btn btn-light text-dark fw-bold rounded-3 order-2 order-md-1">Cancel</button>
-                <button type="submit" class="btn btn-danger fw-bold px-4 py-2 rounded-3 order-1 order-md-2" style="background: #ff004c; border: none;">Confirm Stock Out</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-            <div class="col-6">
-                <label class="form-label fw-bold small">Quantity <span class="text-danger">*</span></label>
-                <input type="number" name="qty" placeholder="0" required class="form-control bg-white rounded-3 shadow-none">
-            </div>
-            <div class="col-6">
-                <label class="form-label fw-bold small">Item No</label>
-                <input type="text" name="voucher_no" placeholder="REQ-001" class="form-control bg-white rounded-3 shadow-none">
-            </div>
-
-            <div class="col-12">
-                <label class="form-label fw-bold small">Department / Ward</label>
-                <select name="dept" class="form-select bg-white rounded-3 shadow-none">
-                    <option selected>No department</option>
-                    {% for d in depts %}
-                    <option value="{{ d.name }}">{{ d.name }}</option>
-                    {% endfor %}
-                </select>
             </div>
 
             <div class="col-12">
