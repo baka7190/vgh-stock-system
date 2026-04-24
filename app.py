@@ -3,22 +3,29 @@ from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import os
 import logging
+import pytz
 
 app = Flask(__name__)
 app.secret_key = 'vgh_hospital_secure_key_2026'
 
 # Silence specific logging shutdown errors in some Python environments
 logging.raiseExceptions = False
-
-MAINTENANCE_TIME = datetime(2026, 4, 24, 21, 30)
+PNG_TIMEZONE = pytz.timezone('Pacific/Port_Moresby')
+MAINTENANCE_TIME = datetime(2026, 4, 24, 21, 50)
 
 
 @app.before_request
-def check_for_maintenance():
-    if request.path == '/logout' or request.path.startswith('/static'):
+def maintenance_gatekeeper():
+    if request.path.startswith('/static') or request.path == '/logout':
         return
-    if datetime.now() > MAINTENANCE_TIME:
-        return render_template('maintenance.html', time=MAINTENANCE_TIME.strftime("%Y-%m-%d %H:%M"))
+
+    # Get the CURRENT time in PNG
+    current_time_png = datetime.now(PNG_TIMEZONE)
+
+    if current_time_png >= MAINTENANCE_TIME:
+        return render_template('maintenance.html',
+                               shutdown_date=MAINTENANCE_TIME.strftime("%d %b %Y"),
+                               shutdown_time=MAINTENANCE_TIME.strftime("%I:%M %p"))
 
 
 # --- DATABASE PERSISTENCE (RENDER & LOCAL) ---
