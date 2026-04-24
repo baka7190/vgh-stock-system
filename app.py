@@ -10,7 +10,7 @@ app.secret_key = 'vgh_hospital_secure_key_2026'
 # Silence specific logging shutdown errors in some Python environments
 logging.raiseExceptions = False
 
-MAINTENANCE_TIME = datetime(2026, 12, 31, 23, 59)
+MAINTENANCE_TIME = datetime(2026, 4, 24, 22, 30)
 
 
 @app.before_request
