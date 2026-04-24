@@ -247,22 +247,64 @@
     </div>
 
     <div id="regModal" class="glass-modal">
-        <div class="bg-white rounded-[1.5rem] p-5 max-w-lg w-100 shadow-2xl" style="border-radius: 1.5rem; max-width: 550px;">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h4 class="fw-bold m-0 text-dark">Add New Item</h4>
-                <button onclick="toggleModal('regModal')" class="btn-close shadow-none"></button>
-            </div>
-            <form action="/register_product" method="POST" class="row g-3 text-start">
-                <div class="col-12"><label class="form-label fw-bold small">Item Name <span class="text-danger">*</span></label><input type="text" name="name" placeholder="e.g. Surgical Gloves (Medium)" required class="form-control rounded-3"></div>
-                <div class="col-md-6"><label class="form-label fw-bold small">Item Code <span class="text-danger">*</span></label><input type="text" name="sku" placeholder="e.g. SG-MED-001" required class="form-control bg-light"></div>
-                <div class="col-md-6"><label class="form-label fw-bold small">Barcode</label><div class="input-group"><input type="text" id="reg_barcode" name="barcode" placeholder="Scan or enter" class="form-control bg-light"><button type="button" onclick="startModalScanner()" class="input-group-text text-success"><i data-lucide="scan"></i></button></div></div>
-                <div class="col-12"><label class="form-label fw-bold small">Category <span class="text-danger">*</span></label><select name="category" id="reg_category_select" class="form-select bg-light"></select></div>
-                <div class="col-md-6"><label class="form-label fw-bold small">Unit</label><select name="unit" class="form-select"><option>Units</option><option>Boxes</option></select></div>
-                <div class="col-md-6"><label class="form-label fw-bold small">Min. Stock Level</label><input type="number" name="min_limit" value="10" class="form-control"></div>
-                <div class="col-12 d-flex justify-content-end gap-3 pt-4"><button type="button" onclick="toggleModal('regModal')" class="btn btn-link text-dark fw-bold text-decoration-none">Cancel</button><button type="submit" class="btn btn-success fw-bold px-4 py-2 rounded-3" style="background: #066d1a;">Add Item</button></div>
-            </form>
+    <div class="bg-white rounded-[1.5rem] p-4 p-md-5 max-w-lg w-100 shadow-2xl" style="border-radius: 1.5rem; max-width: 600px;">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="fw-bold m-0 text-dark">Add New Item</h4>
+            <button onclick="toggleModal('regModal')" class="btn-close shadow-none"></button>
         </div>
+        <form action="/register_product" method="POST" class="row g-3 text-start">
+            <div class="col-12">
+                <label class="form-label fw-bold small">Item Name <span class="text-danger">*</span></label>
+                <input type="text" name="name" placeholder="e.g. Surgical Gloves (Medium)" required class="form-control rounded-3 shadow-none">
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label fw-bold small">Item Code <span class="text-danger">*</span></label>
+                <input type="text" name="sku" placeholder="e.g. SG-MED-001" required class="form-control bg-light shadow-none">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-bold small">Barcode</label>
+                <div class="input-group">
+                    <input type="text" id="reg_barcode" name="barcode" placeholder="Scan or enter" class="form-control bg-light shadow-none">
+                    <button type="button" onclick="startModalScanner()" class="input-group-text text-success bg-light border-start-0">
+                        <i data-lucide="scan" size="18"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="col-12">
+                <label class="form-label fw-bold small">Category (Type New or Select) <span class="text-danger">*</span></label>
+                <input type="text" name="category" list="regCategoryOptions" id="reg_category_input" placeholder="Search or type new category..." class="form-control bg-light shadow-none" required>
+                <datalist id="regCategoryOptions">
+                    </datalist>
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label fw-bold small">Unit Type</label>
+                <select name="unit" class="form-select shadow-none">
+                    <option value="Pieces">Single Pieces</option>
+                    <option value="Boxes">Boxes / Cartons</option>
+                    <option value="Vials">Vials</option>
+                    <option value="Tablets">Tablets</option>
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-bold small">Opening Stock (Qty)</label>
+                <input type="number" name="stock" value="0" min="0" class="form-control shadow-none" placeholder="How many on hand?">
+            </div>
+
+            <div class="col-md-12">
+                <label class="form-label fw-bold small">Min. Stock Level (Alert Threshold)</label>
+                <input type="number" name="min_limit" value="10" class="form-control shadow-none">
+            </div>
+
+            <div class="col-12 d-flex justify-content-end gap-3 pt-4">
+                <button type="button" onclick="toggleModal('regModal')" class="btn btn-link text-dark fw-bold text-decoration-none">Cancel</button>
+                <button type="submit" class="btn btn-success fw-bold px-4 py-2 rounded-3" style="background: #066d1a;">Add Item</button>
+            </div>
+        </form>
     </div>
+</div>
 
     <div id="modalScanner" class="glass-modal" style="z-index: 3000;">
         <div class="bg-dark rounded-4 p-3" style="max-width: 400px; width: 90%;"><div id="modal-reader"></div><button onclick="stopModalScanner()" class="btn btn-danger w-100 mt-3 fw-bold">Cancel Scan</button></div>
@@ -328,12 +370,16 @@
         }
 
         function loadCategoriesIntoForm() {
-            fetch('/api/categories').then(r => r.json()).then(data => {
-                const select = document.getElementById('reg_category_select');
-                select.innerHTML = '<option value="" disabled selected>Select category</option>';
-                data.forEach(c => { select.innerHTML += `<option value="${c.name}">${c.name}</option>`; });
+    fetch('/api/categories').then(r => r.json()).then(data => {
+        const list = document.getElementById('regCategoryOptions');
+        if (list) {
+            list.innerHTML = ''; // Clear existing
+            data.forEach(c => {
+                list.innerHTML += `<option value="${c.name}">`;
             });
         }
+    });
+}
 
         let modalScannerObj = null;
         // --- OPTIMIZED HIGH-SPEED SCANNER LOGIC ---

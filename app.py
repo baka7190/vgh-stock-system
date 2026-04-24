@@ -196,19 +196,43 @@ def add_category():
 
 @app.route('/register_product', methods=['POST'])
 def register_product():
+    cat_name = request.form.get('category')
+
+    # Check if category exists; if not, create it
+    category = Category.query.filter_by(name=cat_name).first()
+    if not category and cat_name:
+        new_cat = Category(name=cat_name, type="General")
+        db.session.add(new_cat)
+        db.session.commit()
+
+    # Create the product with the specified stock quantity
     new_p = Product(
         name=request.form.get('name').upper(),
         sku=request.form.get('sku'),
         barcode=request.form.get('barcode'),
         unit=request.form.get('unit'),
-        stock=0,
+        stock=int(request.form.get('stock') or 0),
         min_limit=int(request.form.get('min_limit') or 10),
         cost_price=float(request.form.get('cost_price') or 0.0),
         description=request.form.get('description')
     )
+
     db.session.add(new_p)
     db.session.commit()
-    flash("Asset Registered", "success")
+
+    # Log an initial transaction if stock was added
+    if new_p.stock > 0:
+        log = Transaction(
+            item_name=new_p.name,
+            trans_type='IN',
+            qty=new_p.stock,
+            dept='Opening Stock',
+            authorized_by=session.get('user', 'Admin')
+        )
+        db.session.add(log)
+        db.session.commit()
+
+    flash(f"{new_p.name} Registered with {new_p.stock} units.", "success")
     return redirect(url_for('inventory'))
 
 

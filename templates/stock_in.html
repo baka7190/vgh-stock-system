@@ -64,7 +64,7 @@
     </div>
 </div>
 
-<div id="stockInModal" class="glass-modal">
+    <div id="stockInModal" class="glass-modal">
     <div class="bg-white rounded-[1.5rem] p-4 p-md-5 max-w-lg w-100 shadow-2xl" style="border-radius: 1.5rem; max-width: 600px;">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h5 class="fw-bold m-0 text-dark d-flex align-items-center gap-2">
@@ -80,25 +80,63 @@
             <input type="hidden" name="type" value="in">
 
             <div class="col-12">
-    <label class="form-label fw-bold small">Item (Scan, Type, or Select) <span class="text-danger">*</span></label>
-    <div class="input-group">
-        <span class="input-group-text bg-white border-end-0 rounded-start-3">
-            <i data-lucide="search" size="16" class="text-muted"></i>
-        </span>
-        <input type="text" id="stock_in_item_input" list="inventoryList" name="item_identifier" class="form-control border-start-0 border-end-0 bg-white shadow-none" placeholder="Type name or scan barcode..." required>
+                <label class="form-label fw-bold small">Item (Scan, Type, or Select) <span class="text-danger">*</span></label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0 rounded-start-3">
+                        <i data-lucide="search" size="16" class="text-muted"></i>
+                    </span>
+                    <input type="text" id="stock_in_item_input" list="inventoryList" name="item_identifier" class="form-control border-start-0 border-end-0 bg-white shadow-none" placeholder="Type name or scan barcode..." required>
 
-        <datalist id="inventoryList">
-            {% for item in inventory %}
-            <option value="{{ item.barcode }}">{{ item.name }}</option>
-            {% endfor %}
-        </datalist>
+                    <datalist id="inventoryList">
+                        {% for item in inventory %}
+                        <option value="{{ item.barcode }}">{{ item.name }}</option>
+                        {% endfor %}
+                    </datalist>
 
-        <button type="button" onclick="startStockInScanner()" class="btn btn-outline-success rounded-end-3 px-3">
-            <i data-lucide="scan" size="18"></i>
-        </button>
+                    <button type="button" onclick="startStockInScanner()" class="btn btn-outline-success rounded-end-3 px-3">
+                        <i data-lucide="scan" size="18"></i>
+                    </button>
+                </div>
+                <div id="item-status-hint" class="mt-1 small"></div>
+                <input type="hidden" name="item_id" id="hidden_item_id">
+            </div>
+
+            <div class="col-6 col-md-6">
+                <label class="form-label fw-bold small">Quantity <span class="text-danger">*</span></label>
+                <input type="number" name="qty" placeholder="0" required class="form-control bg-white rounded-3 shadow-none">
+            </div>
+            <div class="col-6 col-md-6">
+                <label class="form-label fw-bold small">Item Code</label>
+                <input type="text" name="voucher_no" placeholder="e.g. SG-MED-001" class="form-control bg-white rounded-3 shadow-none">
+            </div>
+
+            <div class="col-12">
+                <label class="form-label fw-bold small">Supplier (Type or Select)</label>
+                <input type="text" name="dept" list="supplierOptions" placeholder="Select or type new supplier..." class="form-control bg-white rounded-3 shadow-none">
+                <datalist id="supplierOptions">
+                    <option value="Area Medical Store (AMS)">
+                    <option value="Private Procurement">
+                    <option value="Direct Donation">
+                    <option value="Provincial Health Office">
+                </datalist>
+            </div>
+
+            <div class="col-12">
+                <label class="form-label fw-bold small">Expiry Date</label>
+                <input type="date" name="expiry_date" class="form-control bg-white rounded-3 shadow-none">
+            </div>
+
+            <div class="col-12">
+                <label class="form-label fw-bold small">Notes</label>
+                <textarea name="notes" rows="2" placeholder="Optional notes..." class="form-control bg-white rounded-3 shadow-none"></textarea>
+            </div>
+
+            <div class="col-12 d-flex flex-column flex-md-row justify-content-end gap-2 gap-md-3 pt-3">
+                <button type="button" onclick="toggleModal('stockInModal')" class="btn btn-light text-dark fw-bold rounded-3 order-2 order-md-1">Cancel</button>
+                <button type="submit" class="btn btn-success fw-bold px-4 py-2 rounded-3 order-1 order-md-2" style="background: #0a9424;">Confirm Stock In</button>
+            </div>
+        </form>
     </div>
-    <div id="item-status-hint" class="mt-1 small"></div>
-    <input type="hidden" name="item_id" id="hidden_item_id">
 </div>
 
             <div class="col-6 col-md-6">
