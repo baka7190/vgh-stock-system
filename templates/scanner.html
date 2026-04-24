@@ -116,7 +116,7 @@
 
         <div class="pt-4 border-top d-flex gap-2">
             <button onclick="toggleModal('scannerResultModal'); startScanning();" class="btn btn-light fw-bold w-100 py-2 rounded-3">Close</button>
-            <a id="scan-res-edit-link" href="#" class="btn btn-success fw-bold w-100 py-2 rounded-3" style="background: #0a9424; border: none;">View Inventory</a>
+            <a id="scan-res-edit-link" href="#" class="btn btn-success fw-bold w-100 py-2 rounded-3" style="background: #0a9424; border: none;">Edit Item</a>
         </div>
     </div>
 </div>
@@ -130,6 +130,25 @@
         startScanning();
     });
 
+    // Helper for instant audio feedback
+    function playSuccessSound() {
+        try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // High pitch beep
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.1);
+        } catch(e) {
+            // Fallback for restricted browsers
+            if (navigator.vibrate) navigator.vibrate(50);
+        }
+    }
+
     function startScanning() {
         if(isScanning) return;
 
@@ -138,52 +157,26 @@
         document.getElementById('scanner-overlay').classList.add('d-none');
         document.getElementById('not-found-card').classList.add('d-none');
 
-        // Play feedback sounds from base.html helper if exists
-        if(typeof playSuccessSound === "undefined") {
-            window.playSuccessSound = function() { console.log("Beep!"); };
-        }
-
         html5QrCode.start(
             { facingMode: "environment" },
             {
-                fps: 30, // Optimized for fast autocapture
-                qrbox: { width: 280, height: 200 }, // Rectangular for better barcode capture
+                fps: 30,
+                qrbox: { width: 280, height: 200 },
                 aspectRatio: 1.0
             },
             onScanSuccess
         ).then(() => isScanning = true).catch(err => {
             console.error("Scanner failed", err);
         });
-        let qrboxFunction = function(viewfinderWidth, viewfinderHeight) {
-        let minEdgeId = Math.min(viewfinderWidth, viewfinderHeight);
-        let readingBoxWidth = minEdgeId * 0.8; // Use 80% of screen width
-        let readingBoxHeight = readingBoxWidth * 0.6; // Wider for long barcodes
-
-        return {
-            width: readingBoxWidth,
-            height: readingBoxHeight
-        };
-    }
-
-    html5QrCode.start(
-        { facingMode: "environment" },
-        {
-            fps: 40, // Maximize speed
-            qrbox: qrboxFunction, // Use the dynamic function
-            aspectRatio: 1.0,
-            showTorchButtonIfSupported: true // Helpful for dark VGH wards
-        },
-        onScanSuccess
-    ).then(() => isScanning = true).catch(err => {
-        console.error("Scanner failed", err);
-    });
     }
 
     function onScanSuccess(decodedText) {
+        // ADDED: Play sound on detection
+        playSuccessSound();
+
         document.getElementById('scanner-overlay').classList.remove('d-none');
         document.getElementById('detected-code').innerText = decodedText;
 
-        // Haptic feedback
         if (navigator.vibrate) navigator.vibrate(50);
 
         html5QrCode.stop().then(() => {
@@ -199,20 +192,14 @@
             .then(r => r.json())
             .then(data => {
                 if(data.status === "exists") {
-                    // Populate Modal with data
                     document.getElementById('scan-res-name').innerText = data.name;
                     document.getElementById('scan-res-sku').innerText = data.sku || 'N/A';
                     document.getElementById('scan-res-barcode').innerText = code;
-                    document.getElementById('scan-res-stock').innerText = data.stock;
+                    document.getElementById('scan-res-stock').innerText = data.stock + " Units";
                     document.getElementById('scan-res-cat').innerText = data.category || 'General';
-
-                    // Set edit link (Assuming you have or will have an edit route)
                     document.getElementById('scan-res-edit-link').href = `/inventory?search=${code}`;
 
-                    // Show Modal
                     toggleModal('scannerResultModal');
-
-                    // Show "Scan Another" button in background
                     document.getElementById('scan-again-btn').classList.remove('d-none');
                 } else {
                     document.getElementById('result-container').classList.remove('d-none');

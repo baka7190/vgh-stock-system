@@ -8,9 +8,9 @@
             <p class="text-muted small mb-0">Manage all stock items</p>
         </div>
         <div class="d-flex gap-2">
-            <button onclick="toggleModal('categoryModal')" class="btn btn-light border rounded-3 px-3 d-flex align-items-center justify-content-center gap-2 fw-bold text-sm flex-fill flex-md-grow-0">
-                <i data-lucide="tag" size="18"></i> <span class="d-md-inline">Categories</span>
-            </button>
+            <button onclick="toggleModal('categoryModal')" class="btn btn-light border rounded-3 px-3 d-flex align-items-center justify-content-center gap-2 fw-bold text-sm">
+    <i data-lucide="tag" size="18"></i> Categories
+</button>
             <button onclick="toggleModal('regModal')" class="btn btn-success rounded-3 px-3 d-flex align-items-center justify-content-center gap-2 fw-bold text-sm flex-fill flex-md-grow-0" style="background-color: #0a9424; border: none;">
                 <i data-lucide="plus" size="18"></i> <span class="d-md-inline">Add Item</span>
             </button>
@@ -23,20 +23,20 @@
                 <span class="input-group-text bg-white border-end-0 rounded-start-3">
                     <i data-lucide="search" size="18" class="text-muted"></i>
                 </span>
-                <input type="text" id="inventorySearch" placeholder="Search by name or Item No..." class="form-control border-start-0 rounded-end-3 py-2 shadow-none">
+                <input type="text" id="inventorySearch" placeholder="Search by name or barcode..." class="form-control border-start-0 rounded-end-3 py-2 shadow-none">
             </div>
         </div>
         <div class="col-12 col-md-4">
-            <select id="inventoryCategoryFilter" class="form-select rounded-3 py-2">
-                <option selected>All Categories</option>
-            </select>
+            <select id="inventoryCategoryFilter" class="form-select rounded-3 py-2 shadow-none">
+                <option value="ALL CATEGORIES" selected>All Categories</option>
+                </select>
         </div>
     </div>
 
     <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-        <div class="card-body p-0 text-center">
+        <div class="card-body p-0">
             {% if inventory %}
-                <div class="table-responsive text-start">
+                <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
                         <thead class="bg-light text-muted small text-uppercase">
                             <tr>
@@ -51,30 +51,20 @@
                             {% for item in inventory %}
                             <tr class="border-bottom">
                                 <td class="ps-3 ps-md-4 py-3">
-                                    <div class="fw-bold text-dark text-uppercase small text-md-base">{{ item.name }}</div>
-                                    <div class="text-muted font-monospace d-flex align-items-center gap-1" style="font-size:10px;">
-                                        <i data-lucide="barcode" size="10" class="d-md-none"></i> {{ item.barcode }}
-                                    </div>
-                                    <div class="d-md-none mt-1">
-                                        <span class="badge bg-light text-dark border-0 p-0 text-xs" style="font-size: 10px;">General</span>
+                                    <div class="fw-bold text-dark text-uppercase small">{{ item.name }}</div>
+                                    <div class="text-muted font-monospace" style="font-size:10px;">
+                                        <i data-lucide="barcode" size="10" class="me-1"></i>{{ item.barcode }}
                                     </div>
                                 </td>
-                                <td>
-    {% if item.category %}
-        <span class="badge bg-light text-dark border text-uppercase" style="font-size: 10px;">{{ item.category }}</span>
-    {% else %}
-        <span class="badge bg-light text-secondary border text-uppercase" style="font-size: 10px;">Uncategorized</span>
-    {% endif %}
-</td>
+                                <td class="d-none d-md-table-cell">
+                                    {% if item.category %}
+                                        <span class="badge bg-light text-dark border text-uppercase" style="font-size: 10px;">{{ item.category }}</span>
+                                    {% else %}
+                                        <span class="badge bg-light text-secondary border text-uppercase" style="font-size: 10px;">Uncategorized</span>
+                                    {% endif %}
+                                </td>
                                 <td class="text-center">
                                     <span class="fw-bold h6 mb-0">{{ item.stock }}</span>
-                                    <div class="d-sm-none">
-                                        {% if item.stock <= item.min_limit %}
-                                            <span class="text-danger" style="font-size: 8px;">● Low</span>
-                                        {% else %}
-                                            <span class="text-success" style="font-size: 8px;">● OK</span>
-                                        {% endif %}
-                                    </div>
                                 </td>
                                 <td class="d-none d-sm-table-cell">
                                     {% if item.stock <= item.min_limit %}
@@ -84,23 +74,22 @@
                                     {% endif %}
                                 </td>
                                 <td class="pe-3 pe-md-4 text-end">
-    <div class="d-flex justify-content-end gap-2">
-        <button onclick="openEditModal('{{ item.id }}')" class="btn btn-sm btn-outline-primary border-0 rounded-3 p-2" title="Edit Item">
-            <i data-lucide="edit-3" size="18"></i>
-        </button>
-
-        <button onclick="confirmDelete('{{ item.id }}', '{{ item.name }}')" class="btn btn-sm btn-outline-danger border-0 rounded-3 p-2" title="Delete Item">
-            <i data-lucide="trash-2" size="18"></i>
-        </button>
-    </div>
-</td>
+                                    <div class="d-flex justify-content-end gap-2">
+                                        <button onclick="openEditModal('{{ item.id }}')" class="btn btn-sm btn-outline-primary border-0 rounded-3 p-2">
+                                            <i data-lucide="edit-3" size="18"></i>
+                                        </button>
+                                        <button onclick="confirmDelete('{{ item.id }}', '{{ item.name }}')" class="btn btn-sm btn-outline-danger border-0 rounded-3 p-2">
+                                            <i data-lucide="trash-2" size="18"></i>
+                                        </button>
+                                    </div>
+                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
             {% else %}
-                <div class="py-5 px-3">
+                <div class="py-5 px-3 text-center">
                     <div class="bg-light rounded-circle d-inline-flex p-4 mb-4">
                         <i data-lucide="box" size="48" class="text-muted"></i>
                     </div>
@@ -114,12 +103,22 @@
 </div>
 
 <script>
+    // SEARCH FUNCTIONALITY
     document.getElementById('inventorySearch').addEventListener('keyup', function() {
         let filter = this.value.toUpperCase();
         let rows = document.querySelectorAll("#inventoryTable tr");
         rows.forEach(row => {
-            row.style.display = row.textContent.toUpperCase().includes(filter) ? "" : "none";
+            // Check Item Name and Barcode columns
+            let text = row.textContent.toUpperCase();
+            row.style.display = text.includes(filter) ? "" : "none";
         });
+    });
+
+    // Ensure Lucide icons refresh on page load
+    document.addEventListener('DOMContentLoaded', () => {
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
     });
 </script>
 {% endblock %}
