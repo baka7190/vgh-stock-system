@@ -80,19 +80,26 @@
             <input type="hidden" name="type" value="in">
 
             <div class="col-12">
-                <label class="form-label fw-bold small">Item <span class="text-danger">*</span></label>
-                <div class="input-group">
-                    <span class="input-group-text bg-white border-end-0 rounded-start-3">
-                        <i data-lucide="search" size="16" class="text-muted"></i>
-                    </span>
-                    <select name="item_id" class="form-select border-start-0 bg-white rounded-end-3 shadow-none" required>
-                        <option value="" disabled selected>Select item</option>
-                        {% for item in inventory %}
-                        <option value="{{ item.id }}">{{ item.name }} ({{ item.barcode }})</option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </div>
+    <label class="form-label fw-bold small">Item (Scan, Type, or Select) <span class="text-danger">*</span></label>
+    <div class="input-group">
+        <span class="input-group-text bg-white border-end-0 rounded-start-3">
+            <i data-lucide="search" size="16" class="text-muted"></i>
+        </span>
+        <input type="text" id="stock_in_item_input" list="inventoryList" name="item_identifier" class="form-control border-start-0 border-end-0 bg-white shadow-none" placeholder="Type name or scan barcode..." required>
+
+        <datalist id="inventoryList">
+            {% for item in inventory %}
+            <option value="{{ item.barcode }}">{{ item.name }}</option>
+            {% endfor %}
+        </datalist>
+
+        <button type="button" onclick="startStockInScanner()" class="btn btn-outline-success rounded-end-3 px-3">
+            <i data-lucide="scan" size="18"></i>
+        </button>
+    </div>
+    <div id="item-status-hint" class="mt-1 small"></div>
+    <input type="hidden" name="item_id" id="hidden_item_id">
+</div>
 
             <div class="col-6 col-md-6">
                 <label class="form-label fw-bold small">Quantity <span class="text-danger">*</span></label>

@@ -80,19 +80,26 @@
             <input type="hidden" name="type" value="out">
 
             <div class="col-12">
-                <label class="form-label fw-bold small">Item <span class="text-danger">*</span></label>
-                <div class="input-group">
-                    <span class="input-group-text bg-white border-end-0 rounded-start-3">
-                        <i data-lucide="search" size="16" class="text-muted"></i>
-                    </span>
-                    <select name="item_id" class="form-select border-start-0 border-success border-opacity-50 bg-white rounded-end-3 shadow-none" required>
-                        <option value="" disabled selected>Search items...</option>
-                        {% for item in inventory %}
-                        <option value="{{ item.id }}">{{ item.name }} (Stock: {{ item.stock }})</option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </div>
+    <label class="form-label fw-bold small">Item (Scan, Type, or Select) <span class="text-danger">*</span></label>
+    <div class="input-group">
+        <span class="input-group-text bg-white border-end-0 rounded-start-3">
+            <i data-lucide="search" size="16" class="text-muted"></i>
+        </span>
+        <input type="text" id="stock_out_item_input" list="inventoryList" name="item_identifier" class="form-control border-start-0 border-end-0 bg-white shadow-none" placeholder="Search by name or scan..." required>
+
+        <datalist id="inventoryList">
+            {% for item in inventory %}
+            <option value="{{ item.barcode }}">{{ item.name }} ({{ item.stock }} available)</option>
+            {% endfor %}
+        </datalist>
+
+        <button type="button" onclick="startStockOutScanner()" class="btn btn-outline-danger rounded-end-3 px-3">
+            <i data-lucide="scan" size="18"></i>
+        </button>
+    </div>
+    <div id="stock-out-hint" class="mt-1 small"></div>
+    <input type="hidden" name="item_id" id="hidden_out_id">
+</div>
 
             <div class="col-6">
                 <label class="form-label fw-bold small">Quantity <span class="text-danger">*</span></label>

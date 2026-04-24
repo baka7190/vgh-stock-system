@@ -3,39 +3,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WTS | Login</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>VGH Stock | Login</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap');
+
+        :root {
+            --vgh-dark: #021204;
+            --vgh-green: #0a9424;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--vgh-dark);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .login-card {
+            background: white;
+            border-radius: 24px;
+            padding: 40px;
+            width: 100%;
+            max-width: 400px;
+            shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        .form-control {
+            border-radius: 12px;
+            padding: 12px;
+            border: 2px solid #f1f5f9;
+            background-color: #f8fafc;
+        }
+
+        .form-control:focus {
+            border-color: var(--vgh-green);
+            box-shadow: none;
+            background-color: #fff;
+        }
+
+        .btn-vgh {
+            background-color: var(--vgh-green);
+            color: white;
+            border-radius: 12px;
+            padding: 12px;
+            font-weight: 700;
+            border: none;
+            transition: 0.3s;
+        }
+
+        .btn-vgh:hover {
+            background-color: #087a1d;
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        .brand-icon {
+            width: 50px;
+            height: 50px;
+            background: var(--vgh-green);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+        }
+    </style>
 </head>
-<body class="bg-gray-900 flex items-center justify-center h-screen">
-    <div class="bg-white p-8 rounded-lg shadow-2xl w-96">
-        <div class="text-center mb-6">
-            <h1 class="text-2xl font-bold text-blue-700">YTS STOCK CONTROL APP</h1>
-            <p class="text-gray-500 text-sm">Inventory Management System</p>
+<body>
+
+    <div class="login-card shadow-lg">
+        <div class="text-center mb-4">
+            <div class="brand-icon shadow-sm">
+                <i class="bi bi-plus-lg text-white fs-3"></i>
+            </div>
+            <h4 class="fw-bold text-dark mb-1">VGH STOCK CONTROL</h4>
+            <p class="text-muted small">Inventory Management System</p>
         </div>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
             {% for category, message in messages %}
-              <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-2 mb-4 text-xs">
-                {{ message }}
+              <div class="alert alert-danger border-0 small py-2 rounded-3 mb-4 text-center">
+                <i class="bi bi-exclamation-circle me-2"></i> {{ message }}
               </div>
             {% endfor %}
           {% endif %}
         {% endwith %}
 
-        <form action="/auth" method="POST" class="space-y-4">
-            <div>
-                <label class="block text-xs font-semibold text-gray-600 uppercase">Username</label>
-                <input type="text" name="username" required class="w-full p-2 border rounded mt-1 outline-none focus:ring-2 focus:ring-blue-500">
+        <form action="/auth" method="POST">
+            <div class="mb-3">
+                <label class="form-label small fw-bold text-secondary uppercase text-xs">Username</label>
+                <input type="text" name="username" placeholder="Enter username" required class="form-control shadow-none">
             </div>
-            <div>
-                <label class="block text-xs font-semibold text-gray-600 uppercase">Password</label>
-                <input type="password" name="password" required class="w-full p-2 border rounded mt-1 outline-none focus:ring-2 focus:ring-blue-500">
+            <div class="mb-4">
+                <label class="form-label small fw-bold text-secondary uppercase text-xs">Password</label>
+                <input type="password" name="password" placeholder="••••••••" required class="form-control shadow-none">
             </div>
-            <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded font-bold hover:bg-blue-700 transition">
+            <button type="submit" class="btn btn-vgh w-100 shadow-sm">
                 Sign In
             </button>
         </form>
+
+        <div class="mt-4 text-center">
+            <p class="text-muted" style="font-size: 11px;">© 2026 Vanimo General Hospital</p>
+        </div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

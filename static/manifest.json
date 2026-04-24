@@ -1,14 +1,14 @@
 {
-  "name": "WTS Stock Control",
-  "short_name": "StockApp",
-  "start_url": "/",
+  "name": "VGH Stock Control",
+  "short_name": "VGH Stock",
+  "start_url": "/dashboard",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#007bff",
+  "background_color": "#021204",
+  "theme_color": "#0a9424",
   "icons": [
     {
-      "src": "/static/icons/icon-192.png",
-      "sizes": "192x192",
+      "src": "https://cdn-icons-png.flaticon.com/512/3063/3063822.png",
+      "sizes": "512x512",
       "type": "image/png"
     }
   ]

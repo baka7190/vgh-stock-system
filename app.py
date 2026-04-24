@@ -2,9 +2,13 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import os
+import logging
 
 app = Flask(__name__)
 app.secret_key = 'vgh_hospital_secure_key_2026'
+
+# Silence specific logging shutdown errors in some Python environments
+logging.raiseExceptions = False
 
 MAINTENANCE_TIME = datetime(2026, 12, 31, 23, 59)
 
@@ -169,7 +173,7 @@ def scanner_page():
 def check_barcode(barcode):
     p = Product.query.filter_by(barcode=barcode).first()
     if p:
-        return jsonify({"status": "exists", "name": p.name, "stock": p.stock})
+        return jsonify({"status": "exists", "id": p.id, "name": p.name, "stock": p.stock})
     return jsonify({"status": "not_found"})
 
 
@@ -211,26 +215,40 @@ def register_product():
 @app.route('/update_stock', methods=['POST'])
 def update_stock():
     item_id = request.form.get('item_id')
-    trans_type = request.form.get('type')  # 'in' or 'out'
+    item_identifier = request.form.get('item_identifier')  # The name or barcode typed
     qty_val = int(request.form.get('qty') or 0)
-    product = Product.query.get(item_id)
+    trans_type = request.form.get('type', 'in').upper()
 
-    if not product:
-        flash("Item not found", "error")
-        return redirect(request.referrer)
-
-    if trans_type == 'in':
-        product.stock += qty_val
+    # CASE: New Item Registration during Stock In
+    if item_id == "NEW_ITEM":
+        new_p = Product(
+            name=item_identifier.upper(),
+            barcode=item_identifier,
+            sku=f"AUTO-{datetime.now().strftime('%f')}",
+            stock=qty_val
+        )
+        db.session.add(new_p)
+        db.session.commit()
+        product = new_p
     else:
-        if product.stock < qty_val:
-            flash(f"Insufficient stock! Available: {product.stock}", "error")
-            return redirect(request.referrer)
-        product.stock -= qty_val
+        product = Product.query.get(item_id)
+        if not product:
+            flash("Item not found", "error")
+            return redirect(url_for('stock_in'))
 
+        if trans_type == 'OUT':
+            if product.stock < qty_val:
+                flash(f"Insufficient stock for {product.name}", "error")
+                return redirect(url_for('dispatch_page'))
+            product.stock -= qty_val
+        else:
+            product.stock += qty_val
+
+    # Log the transaction
     log = Transaction(
         item_name=product.name,
         dept=request.form.get('dept', 'General'),
-        trans_type=trans_type.upper(),
+        trans_type=trans_type,
         qty=qty_val,
         voucher_no=request.form.get('voucher_no'),
         batch_no=request.form.get('batch_no'),
@@ -239,17 +257,15 @@ def update_stock():
     )
     db.session.add(log)
     db.session.commit()
-    flash(f"Stock {trans_type.upper()} recorded", "success")
-    return redirect(url_for('dashboard'))
+    flash(f"Stock {trans_type} updated successfully", "success")
+    return redirect(url_for('stock_in') if trans_type == 'IN' else url_for('dispatch_page'))
 
 
 @app.route('/logout')
 def logout():
     session.clear()
     return redirect(url_for('login'))
-import logging
-# This silences the specific logging shutdown error in some Python environments
-logging.raiseExceptions = False
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5000)))

@@ -123,11 +123,20 @@
                 overflow-y: auto;
             }
         }
-    </style>
-</head>
-<body>
+        #modal-reader video, #reader video {
+    object-fit: cover !important;
+    border-radius: 12px;
+}
 
-    <header class="mobile-header shadow-sm">
+/* Adds a pulse effect to the scanning area to show it's active */
+#modal-reader__scan_region {
+    border: 2px solid var(--vgh-green) !important;
+    box-shadow: 0 0 15px rgba(10, 148, 36, 0.4);
+}
+    </style>
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+</head>
+<body class="sidebar-open-dummy"> <header class="mobile-header shadow-sm">
         <div class="d-flex align-items-center gap-2">
             <div class="brand-logo" style="width: 32px; height: 32px;">
                 <i data-lucide="plus" color="white" size="18"></i>
@@ -204,15 +213,35 @@
     </div>
 
     <div id="newCategoryFormModal" class="glass-modal" style="z-index: 2100;">
-        <div class="bg-white rounded-[1.5rem] p-5 max-w-lg w-100 shadow-2xl" style="border-radius: 1.5rem; max-width: 550px;">
+        <div class="bg-white rounded-[1.5rem] p-4 p-md-5 max-w-lg w-100 shadow-2xl" style="border-radius: 1.5rem; max-width: 550px;">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h4 class="fw-bold m-0 text-dark">New Category</h4>
                 <button onclick="toggleModal('newCategoryFormModal')" class="btn-close shadow-none"></button>
             </div>
             <form id="saveCategoryForm" class="row g-3 text-start">
-                <div class="col-12"><label class="form-label fw-bold small">CATEGORY NAME</label><input type="text" id="cat_name" placeholder="e.g. Surgical Gloves" required class="form-control"></div>
-                <div class="col-12"><label class="form-label fw-bold small">TYPE</label><select id="cat_type" class="form-select"><option>Medical Supplies</option><option>Pharmaceuticals</option><option>Equipment</option></select></div>
-                <div class="col-12 d-flex justify-content-end gap-3 pt-4"><button type="button" onclick="toggleModal('newCategoryFormModal')" class="btn btn-link text-dark fw-bold text-decoration-none">Cancel</button><button type="button" onclick="submitNewCategory()" class="btn btn-success fw-bold px-5 py-2 rounded-3" style="background: #066d1a;">Save</button></div>
+                <div class="col-12">
+                    <label class="form-label fw-bold small">CATEGORY NAME</label>
+                    <input type="text" id="cat_name" placeholder="e.g. Surgical Gloves" required class="form-control shadow-none">
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label fw-bold small">TYPE (TYPE OR SELECT)</label>
+                    <input type="text" id="cat_type" list="typeOptions" placeholder="Select or type new type..." class="form-control shadow-none">
+                    <datalist id="typeOptions">
+                        <option value="Medical Supplies">
+                        <option value="Pharmaceuticals">
+                        <option value="Equipment">
+                        <option value="Laboratory">
+                        <option value="Radiology">
+                        <option value="Emergency">
+                    </datalist>
+                    <small class="text-muted" style="font-size: 10px;">You can type a custom name if it's not in the list.</small>
+                </div>
+
+                <div class="col-12 d-flex justify-content-end gap-3 pt-4">
+                    <button type="button" onclick="toggleModal('newCategoryFormModal')" class="btn btn-link text-dark fw-bold text-decoration-none">Cancel</button>
+                    <button type="button" onclick="submitNewCategory()" class="btn btn-success fw-bold px-5 py-2 rounded-3" style="background: #066d1a;">Save</button>
+                </div>
             </form>
         </div>
     </div>
@@ -225,7 +254,7 @@
             </div>
             <form action="/register_product" method="POST" class="row g-3 text-start">
                 <div class="col-12"><label class="form-label fw-bold small">Item Name <span class="text-danger">*</span></label><input type="text" name="name" placeholder="e.g. Surgical Gloves (Medium)" required class="form-control rounded-3"></div>
-                <div class="col-md-6"><label class="form-label fw-bold small">SKU <span class="text-danger">*</span></label><input type="text" name="sku" placeholder="e.g. SG-MED-001" required class="form-control bg-light"></div>
+                <div class="col-md-6"><label class="form-label fw-bold small">Item Code <span class="text-danger">*</span></label><input type="text" name="sku" placeholder="e.g. SG-MED-001" required class="form-control bg-light"></div>
                 <div class="col-md-6"><label class="form-label fw-bold small">Barcode</label><div class="input-group"><input type="text" id="reg_barcode" name="barcode" placeholder="Scan or enter" class="form-control bg-light"><button type="button" onclick="startModalScanner()" class="input-group-text text-success"><i data-lucide="scan"></i></button></div></div>
                 <div class="col-12"><label class="form-label fw-bold small">Category <span class="text-danger">*</span></label><select name="category" id="reg_category_select" class="form-select bg-light"></select></div>
                 <div class="col-md-6"><label class="form-label fw-bold small">Unit</label><select name="unit" class="form-select"><option>Units</option><option>Boxes</option></select></div>
@@ -251,6 +280,7 @@
 
         function toggleModal(id) {
             const modal = document.getElementById(id);
+            if (!modal) return;
             if (modal.style.display === "flex") {
                 modal.style.display = "none";
             } else {
@@ -266,17 +296,25 @@
         }
 
         function submitNewCategory() {
-            const name = document.getElementById('cat_name').value;
-            const type = document.getElementById('cat_type').value;
-            const f = new FormData(); f.append('name', name); f.append('type', type);
-            fetch('/api/add_category', { method: 'POST', body: f }).then(r => r.json()).then(data => {
-                if(data.status === "success") {
-                    document.getElementById('saveCategoryForm').reset();
-                    document.getElementById('newCategoryFormModal').style.display = 'none';
-                    toggleModal('categoryModal');
-                }
-            });
-        }
+    const name = document.getElementById('cat_name').value;
+    const type = document.getElementById('cat_type').value;
+    const f = new FormData(); f.append('name', name); f.append('type', type);
+
+    fetch('/api/add_category', { method: 'POST', body: f })
+        .then(r => r.json())
+        .then(data => {
+            if(data.status === "success") {
+                document.getElementById('saveCategoryForm').reset();
+                document.getElementById('newCategoryFormModal').style.display = 'none';
+
+                // REFRESH BOTH PLACES
+                loadCategories();         // Updates the "Manage Categories" list
+                updateInventoryFilters(); // Updates the Inventory dropdown filter
+
+                alert("Category Saved!");
+            }
+        });
+}
 
         function loadCategories() {
             fetch('/api/categories').then(r => r.json()).then(data => {
@@ -298,17 +336,275 @@
         }
 
         let modalScannerObj = null;
-        function startModalScanner() {
-            document.getElementById('modalScanner').style.display = 'flex';
-            modalScannerObj = new Html5Qrcode("modal-reader");
-            modalScannerObj.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (decodedText) => {
-                document.getElementById('reg_barcode').value = decodedText;
-                stopModalScanner();
-            }).catch(err => alert("Camera error: " + err));
+        // --- OPTIMIZED HIGH-SPEED SCANNER LOGIC ---
+function startModalScanner() {
+    const modalScannerElement = document.getElementById('modalScanner');
+    if (modalScannerElement) modalScannerElement.style.display = 'flex';
+
+    modalScannerObj = new Html5Qrcode("modal-reader");
+
+    const config = {
+        fps: 30,           // Increased from 10 to 30 for smooth, fast motion
+        qrbox: { width: 280, height: 200 }, // Optimized rectangle for barcodes
+        aspectRatio: 1.0,  // Square aspect ratio helps mobile focus
+        rememberLastUsedCamera: true,
+        supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
+    };
+
+    modalScannerObj.start(
+        { facingMode: "environment" }, // Forces back camera
+        config,
+        (decodedText) => {
+            // Play a quick beep/haptic feedback
+            playSuccessSound();
+
+            // Auto-fill the inputs
+            if (document.getElementById('reg_barcode')) document.getElementById('reg_barcode').value = decodedText;
+            if (document.getElementById('stock_in_item_input')) {
+                document.getElementById('stock_in_item_input').value = decodedText;
+                lookupItem(decodedText); // Instant lookup
+            }
+            if (document.getElementById('stock_out_item_input')) {
+                document.getElementById('stock_out_item_input').value = decodedText;
+                lookupStockOut(decodedText); // Instant lookup
+            }
+
+            stopModalScanner();
         }
+    ).catch(err => {
+        console.error("Camera error:", err);
+    });
+}
+
+// Helper for instant feedback
+function playSuccessSound() {
+    try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // High pitch beep
+        gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + 0.1);
+    } catch(e) {
+        // Fallback for browsers that block auto-audio
+        if (navigator.vibrate) navigator.vibrate(50);
+    }
+}
         function stopModalScanner() {
             if(modalScannerObj) modalScannerObj.stop().then(() => { document.getElementById('modalScanner').style.display = 'none'; });
         }
+
+        // --- OFFLINE SYNC QUEUE LOGIC ---
+        const DB_NAME = 'VGH_Offline_DB';
+        const STORE_NAME = 'sync_queue';
+
+        // 1. Initialize the local browser database
+        const dbRequest = indexedDB.open(DB_NAME, 1);
+        dbRequest.onupgradeneeded = (e) => {
+            e.target.result.createObjectStore(STORE_NAME, { autoIncrement: true });
+        };
+
+        // 2. Intercept Form Submissions
+        document.addEventListener('submit', async (e) => {
+            // Check if form targets stock updates
+            if (e.target.action && e.target.action.includes('/update_stock')) {
+                if (!navigator.onLine) {
+                    e.preventDefault();
+
+                    const formData = new FormData(e.target);
+                    const data = Object.fromEntries(formData.entries());
+
+                    // Save to phone's memory
+                    const db = await new Promise(res => {
+                        const req = indexedDB.open(DB_NAME);
+                        req.onsuccess = () => res(req.result);
+                    });
+
+                    const tx = db.transaction(STORE_NAME, 'readwrite');
+                    tx.objectStore(STORE_NAME).add({
+                        data: data,
+                        timestamp: new Date().toISOString()
+                    });
+
+                    alert("⚠️ No Internet. Transaction saved locally and will sync when back online.");
+
+                    // Close the modal safely
+                    const modalElement = e.target.closest('.glass-modal');
+                    if (modalElement) toggleModal(modalElement.id);
+                }
+            }
+        });
+
+        // 3. Background Sync (When internet returns)
+        window.addEventListener('online', async () => {
+            console.log("Internet restored! Syncing data...");
+            const db = await new Promise(res => {
+                const req = indexedDB.open(DB_NAME);
+                req.onsuccess = () => res(req.result);
+            });
+
+            const tx = db.transaction(STORE_NAME, 'readwrite');
+            const store = tx.objectStore(STORE_NAME);
+            const allRecords = await new Promise(res => {
+                const req = store.getAll();
+                req.onsuccess = () => res(req.result);
+            });
+
+            if (allRecords.length === 0) return;
+
+            for (const record of allRecords) {
+                try {
+                    const response = await fetch('/update_stock', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: new URLSearchParams(record.data)
+                    });
+
+                    if (response.ok) {
+                        console.log("Synced 1 record successfully");
+                    }
+                } catch (err) {
+                    console.error("Sync failed", err);
+                }
+            }
+
+            // Clear the store after processing
+            const clearTx = db.transaction(STORE_NAME, 'readwrite');
+            clearTx.objectStore(STORE_NAME).clear();
+            alert("✅ All offline transactions have been synced to the server!");
+        });
+        // Function to update the Inventory Category Filter
+function updateInventoryFilters() {
+    const filterSelect = document.getElementById('inventoryCategoryFilter');
+    if (!filterSelect) return; // Only run if we are on the Inventory page
+
+    fetch('/api/categories')
+        .then(r => r.json())
+        .then(data => {
+            // Keep the first "All Categories" option
+            filterSelect.innerHTML = '<option selected>All Categories</option>';
+
+            // Add every category found in the database
+            data.forEach(cat => {
+                filterSelect.innerHTML += `<option value="${cat.name}">${cat.name}</option>`;
+            });
+        });
+}
+
+// Run this function whenever the page finishes loading
+window.addEventListener('DOMContentLoaded', updateInventoryFilters);
+
+// Also add a listener to filter the table when a category is selected
+document.getElementById('inventoryCategoryFilter')?.addEventListener('change', function() {
+    let filter = this.value.toUpperCase();
+    let rows = document.querySelectorAll("#inventoryTable tr");
+
+    rows.forEach(row => {
+        // Index 1 is usually the Category column in our table
+        let catColumn = row.cells[1].textContent.toUpperCase();
+        if (filter === "ALL CATEGORIES" || catColumn.includes(filter)) {
+            row.style.display = "";
+        } else {
+            row.style.display = "none";
+        }
+    });
+});
+// --- SMART STOCK-IN LOOKUP ---
+const itemInput = document.getElementById('stock_in_item_input');
+const hint = document.getElementById('item-status-hint');
+const hiddenId = document.getElementById('hidden_item_id');
+
+if (itemInput) {
+    itemInput.addEventListener('input', function() {
+        lookupItem(this.value);
+    });
+}
+
+function lookupItem(val) {
+    if (val.length < 3) return;
+
+    fetch(`/api/check_barcode/${val}`)
+        .then(r => r.json())
+        .then(data => {
+            if (data.status === "exists") {
+                hint.innerHTML = `<span class="text-success fw-bold">✓ Found: ${data.name} (Current Stock: ${data.stock})</span>`;
+                // If it exists, we use the name to keep it friendly
+                itemInput.value = data.name;
+                // Store the ID for the backend update_stock route
+                hiddenId.value = data.id;
+            } else {
+                hint.innerHTML = `<span class="text-warning fw-bold">+ New Barcode detected. Please type Item Name to register.</span>`;
+                hiddenId.value = "NEW_ITEM"; // Flag for the backend
+            }
+        });
+}
+
+// Reuse your scanner logic but point it here
+function startStockInScanner() {
+    startModalScanner(); // This is your existing function
+    // Modify your onScanSuccess in base.html to handle this specific input:
+    // decodedText => { document.getElementById('stock_in_item_input').value = decodedText; lookupItem(decodedText); }
+}
+// --- SMART STOCK-OUT LOOKUP ---
+const outInput = document.getElementById('stock_out_item_input');
+const outHint = document.getElementById('stock-out-hint');
+const outHiddenId = document.getElementById('hidden_out_id');
+let currentAvailableStock = 0;
+
+if (outInput) {
+    outInput.addEventListener('input', function() {
+        lookupStockOut(this.value);
+    });
+}
+
+function lookupStockOut(val) {
+    if (val.length < 2) {
+        outHint.innerHTML = "";
+        return;
+    }
+
+    fetch(`/api/check_barcode/${val}`)
+        .then(r => r.json())
+        .then(data => {
+            if (data.status === "exists") {
+                currentAvailableStock = data.stock;
+                outHint.innerHTML = `<span class="text-success fw-bold">✓ Ready: ${data.name} | Available: ${data.stock}</span>`;
+                outHiddenId.value = data.id;
+
+                // If the user already typed a quantity, re-validate it
+                validateQuantity();
+            } else {
+                outHint.innerHTML = `<span class="text-danger fw-bold">❌ Item not found. Please check barcode or name.</span>`;
+                outHiddenId.value = "";
+            }
+        });
+}
+
+// Add validation to the Quantity field to prevent negative stock
+const qtyInput = document.querySelector('input[name="qty"]');
+if (qtyInput) {
+    qtyInput.addEventListener('input', validateQuantity);
+}
+
+function validateQuantity() {
+    const requestedQty = parseInt(qtyInput.value) || 0;
+    if (outHiddenId.value && requestedQty > currentAvailableStock) {
+        outHint.innerHTML = `<span class="text-danger fw-bold">⚠️ ERROR: Only ${currentAvailableStock} units available. Cannot issue ${requestedQty}.</span>`;
+        qtyInput.classList.add('is-invalid');
+    } else if (outHiddenId.value) {
+        outHint.innerHTML = `<span class="text-success fw-bold">✓ Ready: Available stock is sufficient.</span>`;
+        qtyInput.classList.remove('is-invalid');
+    }
+}
+
+function startStockOutScanner() {
+    startModalScanner(); // Uses your global scanner
+    // You'll need to update your scanner's success callback to handle this input
+}
     </script>
 </body>
 </html>
