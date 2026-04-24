@@ -1,50 +1,51 @@
 {% extends "base.html" %}
+
 {% block content %}
-<div class="mb-5">
+<div class="mb-4 mb-md-5 text-center text-md-start">
     <h3 class="fw-bold mb-1">Dashboard</h3>
     <p class="text-muted small">Vanimo General Hospital — Stock Control</p>
 </div>
 
-<div class="row g-4 mb-5">
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm p-4 h-100 text-center" style="border-radius: 20px;">
-            <div class="mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; background: #ecfdf5; border-radius: 12px;">
-                <i data-lucide="package" class="text-success"></i>
+<div class="row g-3 g-md-4 mb-4 mb-md-5">
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm p-3 p-md-4 h-100 text-center" style="border-radius: 20px;">
+            <div class="mx-auto mb-2 mb-md-3 d-flex align-items-center justify-content-center" style="width: 45px; height: 45px; background: #ecfdf5; border-radius: 12px;">
+                <i data-lucide="package" class="text-success" size="20"></i>
             </div>
             <p class="text-muted small mb-1">Total Items</p>
-            <h2 class="fw-bold mb-0">{{ total_items }}</h2>
+            <h3 class="fw-bold mb-0">{{ total_items }}</h3>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm p-4 h-100 text-center" style="border-radius: 20px;">
-            <div class="mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; background: #fffbeb; border-radius: 12px;">
-                <i data-lucide="alert-triangle" class="text-warning"></i>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm p-3 p-md-4 h-100 text-center" style="border-radius: 20px;">
+            <div class="mx-auto mb-2 mb-md-3 d-flex align-items-center justify-content-center" style="width: 45px; height: 45px; background: #fffbeb; border-radius: 12px;">
+                <i data-lucide="alert-triangle" class="text-warning" size="20"></i>
             </div>
             <p class="text-muted small mb-1">Low Stock</p>
-            <h2 class="fw-bold mb-0">{{ low_stock_count }}</h2>
+            <h3 class="fw-bold mb-0">{{ low_stock_count }}</h3>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm p-4 h-100 text-center" style="border-radius: 20px;">
-            <div class="mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; background: #f0fdf4; border-radius: 12px;">
-                <i data-lucide="trending-up" class="text-success"></i>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm p-3 p-md-4 h-100 text-center" style="border-radius: 20px;">
+            <div class="mx-auto mb-2 mb-md-3 d-flex align-items-center justify-content-center" style="width: 45px; height: 45px; background: #f0fdf4; border-radius: 12px;">
+                <i data-lucide="trending-up" class="text-success" size="20"></i>
             </div>
-            <p class="text-muted small mb-1">Stock In (Month)</p>
-            <h2 class="fw-bold mb-0">{{ stock_in_month }}</h2>
+            <p class="text-muted small mb-1">Stock In</p>
+            <h3 class="fw-bold mb-0">{{ stock_in_month }}</h3>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm p-4 h-100 text-center" style="border-radius: 20px;">
-            <div class="mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; background: #fef2f2; border-radius: 12px;">
-                <i data-lucide="trending-down" class="text-danger"></i>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm p-3 p-md-4 h-100 text-center" style="border-radius: 20px;">
+            <div class="mx-auto mb-2 mb-md-3 d-flex align-items-center justify-content-center" style="width: 45px; height: 45px; background: #fef2f2; border-radius: 12px;">
+                <i data-lucide="trending-down" class="text-danger" size="20"></i>
             </div>
-            <p class="text-muted small mb-1">Stock Out (Month)</p>
-            <h2 class="fw-bold mb-0">{{ stock_out_month }}</h2>
+            <p class="text-muted small mb-1">Stock Out</p>
+            <h3 class="fw-bold mb-0">{{ stock_out_month }}</h3>
         </div>
     </div>
 </div>
 
-<div class="card border-0 shadow-sm p-5" style="border-radius: 25px;">
+<div class="card border-0 shadow-sm p-3 p-md-5 mb-4" style="border-radius: 25px;">
     <div class="d-flex align-items-center gap-2 mb-4">
         <i data-lucide="activity" class="text-success" size="18"></i>
         <h5 class="fw-bold mb-0">Recent Activity</h5>
@@ -52,19 +53,26 @@
 
     {% if transactions %}
         <div class="table-responsive">
-            <table class="table table-borderless align-middle">
+            <table class="table table-borderless align-middle" style="min-width: 400px;">
                 <tbody>
                     {% for t in transactions %}
                     <tr class="border-bottom">
-                        <td width="50">
+                        <td width="40">
                             <div class="rounded-3 p-2 d-inline-block {% if t.trans_type == 'IN' %}bg-success-subtle{% else %}bg-danger-subtle{% endif %}">
-                                <i data-lucide="{% if t.trans_type == 'IN' %}arrow-down-left{% else %}arrow-up-right{% endif %}" size="16"></i>
+                                <i data-lucide="{% if t.trans_type == 'IN' %}arrow-down-left{% else %}arrow-up-right{% endif %}" size="14"></i>
                             </div>
                         </td>
-                        <td class="fw-bold">{{ t.item_name }}</td>
-                        <td class="text-muted">{{ t.dept }}</td>
-                        <td class="fw-bold">{% if t.trans_type == 'IN' %}+{% else %}-{% endif %}{{ t.qty }}</td>
-                        <td class="text-end text-muted small">{{ t.timestamp.strftime('%H:%M %p') }}</td>
+                        <td>
+                            <div class="fw-bold text-truncate" style="max-width: 150px;">{{ t.item_name }}</div>
+                            <div class="text-muted small d-md-none">{{ t.dept }}</div>
+                        </td>
+                        <td class="text-muted d-none d-md-table-cell">{{ t.dept }}</td>
+                        <td class="fw-bold {% if t.trans_type == 'IN' %}text-success{% else %}text-danger{% endif %}">
+                            {% if t.trans_type == 'IN' %}+{% else %}-{% endif %}{{ t.qty }}
+                        </td>
+                        <td class="text-end text-muted small">
+                            {{ t.timestamp.strftime('%H:%M') }}
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>

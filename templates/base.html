@@ -82,7 +82,7 @@
         .nav-link.active { background: var(--vgh-green); color: white; }
 
         .copyright {
-            margin-top: auto; padding-top: 2rem;
+            margin-top: auto; padding-top: 1rem;
             text-align: center; color: var(--vgh-text);
             font-size: 11px; font-weight: 600; opacity: 0.5;
         }
@@ -114,10 +114,8 @@
             #sidebar.active { transform: translateX(0); }
             .main-content { margin-left: 0; padding: 1.5rem; }
 
-            /* Sidebar Overlay appears when sidebar is active */
             body.sidebar-open #sidebarOverlay { display: block; }
 
-            /* Ensure Modals take full width on small screens */
             .glass-modal > div {
                 width: 100% !important;
                 margin: 0;
@@ -173,6 +171,12 @@
             </a>
             <a href="/reports" class="nav-link {% if request.path == '/reports' %}active{% endif %}">
                 <i data-lucide="bar-chart-3"></i> Reports
+            </a>
+        </div>
+
+        <div class="mt-4 pt-4 border-top border-secondary border-opacity-25">
+            <a href="/logout" class="nav-link text-danger fw-bold">
+                <i data-lucide="log-out"></i> Sign Out
             </a>
         </div>
 
@@ -238,7 +242,6 @@
     <script>
         lucide.createIcons();
 
-        // --- MOBILE MENU LOGIC ---
         function toggleMobileMenu() {
             const sidebar = document.getElementById('sidebar');
             const body = document.body;
@@ -246,7 +249,6 @@
             body.classList.toggle('sidebar-open');
         }
 
-        // --- MODAL LOGIC ---
         function toggleModal(id) {
             const modal = document.getElementById(id);
             if (modal.style.display === "flex") {
@@ -295,7 +297,6 @@
             });
         }
 
-        // --- CAMERA SCANNER LOGIC ---
         let modalScannerObj = null;
         function startModalScanner() {
             document.getElementById('modalScanner').style.display = 'flex';

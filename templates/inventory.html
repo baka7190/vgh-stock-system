@@ -1,24 +1,24 @@
 {% extends "base.html" %}
 {% block title %}Inventory | VGH Stock{% endblock %}
 {% block content %}
-<div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+<div class="container-fluid px-2 px-md-3">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
         <div>
             <h2 class="fw-bold text-dark m-0">Inventory</h2>
             <p class="text-muted small mb-0">Manage all stock items</p>
         </div>
         <div class="d-flex gap-2">
-            <button onclick="toggleModal('categoryModal')" class="btn btn-light border rounded-3 px-3 d-flex align-items-center gap-2 font-bold text-sm">
-                <i data-lucide="tag" size="18"></i> Categories
+            <button onclick="toggleModal('categoryModal')" class="btn btn-light border rounded-3 px-3 d-flex align-items-center justify-content-center gap-2 fw-bold text-sm flex-fill flex-md-grow-0">
+                <i data-lucide="tag" size="18"></i> <span class="d-md-inline">Categories</span>
             </button>
-            <button onclick="toggleModal('regModal')" class="btn btn-success rounded-3 px-3 d-flex align-items-center gap-2 font-bold text-sm" style="background-color: #0a9424; border: none;">
-                <i data-lucide="plus" size="18"></i> Add Item
+            <button onclick="toggleModal('regModal')" class="btn btn-success rounded-3 px-3 d-flex align-items-center justify-content-center gap-2 fw-bold text-sm flex-fill flex-md-grow-0" style="background-color: #0a9424; border: none;">
+                <i data-lucide="plus" size="18"></i> <span class="d-md-inline">Add Item</span>
             </button>
         </div>
     </div>
 
-    <div class="row g-3 mb-5">
-        <div class="col-md-8">
+    <div class="row g-3 mb-4 mb-md-5">
+        <div class="col-12 col-md-8">
             <div class="input-group">
                 <span class="input-group-text bg-white border-end-0 rounded-start-3">
                     <i data-lucide="search" size="18" class="text-muted"></i>
@@ -26,45 +26,63 @@
                 <input type="text" id="inventorySearch" placeholder="Search by name or SKU..." class="form-control border-start-0 rounded-end-3 py-2 shadow-none">
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-12 col-md-4">
             <select class="form-select rounded-3 py-2">
                 <option selected>All Categories</option>
             </select>
         </div>
     </div>
 
-    <div class="card border-0 shadow-sm rounded-4 mt-4 overflow-hidden">
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
         <div class="card-body p-0 text-center">
             {% if inventory %}
                 <div class="table-responsive text-start">
                     <table class="table table-hover align-middle mb-0">
                         <thead class="bg-light text-muted small text-uppercase">
                             <tr>
-                                <th class="ps-4 py-3">Item Details</th>
-                                <th>Category</th>
+                                <th class="ps-3 ps-md-4 py-3">Item Details</th>
+                                <th class="d-none d-md-table-cell">Category</th>
                                 <th class="text-center">Stock</th>
-                                <th>Status</th>
-                                <th class="pe-4 text-end">Actions</th>
+                                <th class="d-none d-sm-table-cell">Status</th>
+                                <th class="pe-3 pe-md-4 text-end">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="inventoryTable">
                             {% for item in inventory %}
                             <tr class="border-bottom">
-                                <td class="ps-4">
-                                    <div class="fw-bold text-dark uppercase">{{ item.name }}</div>
-                                    <div class="text-muted font-monospace" style="font-size:10px;">{{ item.barcode }}</div>
+                                <td class="ps-3 ps-md-4 py-3">
+                                    <div class="fw-bold text-dark text-uppercase small text-md-base">{{ item.name }}</div>
+                                    <div class="text-muted font-monospace d-flex align-items-center gap-1" style="font-size:10px;">
+                                        <i data-lucide="barcode" size="10" class="d-md-none"></i> {{ item.barcode }}
+                                    </div>
+                                    <div class="d-md-none mt-1">
+                                        <span class="badge bg-light text-dark border-0 p-0 text-xs" style="font-size: 10px;">General</span>
+                                    </div>
                                 </td>
-                                <td><span class="badge bg-light text-dark border">General</span></td>
-                                <td class="text-center fw-bold h5 mb-0">{{ item.stock }}</td>
-                                <td>
+                                <td class="d-none d-md-table-cell">
+                                    <span class="badge bg-light text-dark border">General</span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="fw-bold h6 mb-0">{{ item.stock }}</span>
+                                    <div class="d-sm-none">
+                                        {% if item.stock <= item.min_limit %}
+                                            <span class="text-danger" style="font-size: 8px;">● Low</span>
+                                        {% else %}
+                                            <span class="text-success" style="font-size: 8px;">● OK</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td class="d-none d-sm-table-cell">
                                     {% if item.stock <= item.min_limit %}
                                         <span class="text-danger small fw-bold">● Low Stock</span>
                                     {% else %}
                                         <span class="text-success small fw-bold">● In Stock</span>
                                     {% endif %}
                                 </td>
-                                <td class="pe-4 text-end">
-                                    <button class="btn btn-sm text-primary"><i data-lucide="edit-3" size="16"></i></button>
+                                <td class="pe-3 pe-md-4 text-end">
+                                    <button class="btn btn-sm text-primary p-2">
+                                        <i data-lucide="edit-3" size="18"></i>
+                                    </button>
                                 </td>
                             </tr>
                             {% endfor %}
@@ -72,13 +90,13 @@
                     </table>
                 </div>
             {% else %}
-                <div class="py-5">
+                <div class="py-5 px-3">
                     <div class="bg-light rounded-circle d-inline-flex p-4 mb-4">
                         <i data-lucide="box" size="48" class="text-muted"></i>
                     </div>
                     <h4 class="fw-bold">No items found</h4>
-                    <p class="text-muted">Add your first inventory item to get started</p>
-                    <button onclick="toggleModal('regModal')" class="btn btn-success px-4 py-2" style="background-color: #0a9424;">Add First Item</button>
+                    <p class="text-muted small">Add your first inventory item to get started</p>
+                    <button onclick="toggleModal('regModal')" class="btn btn-success px-4 py-2 w-100 w-md-auto" style="background-color: #0a9424;">Add First Item</button>
                 </div>
             {% endif %}
         </div>

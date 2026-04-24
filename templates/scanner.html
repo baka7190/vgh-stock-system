@@ -3,71 +3,78 @@
 {% block title %}Scanner | VGH Stock{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4 py-lg-5">
-    <div class="mb-4">
-        <div class="d-flex align-items-center gap-3 mb-1">
-            <i data-lucide="scan" class="text-success" size="28"></i>
+<div class="container-fluid px-2 px-md-3 py-3 py-lg-4">
+    <div class="text-center text-md-start mb-4">
+        <div class="d-flex align-items-center justify-content-center justify-content-md-start gap-2 mb-1">
+            <i data-lucide="scan" class="text-success" size="24"></i>
             <h2 class="fw-bold text-dark m-0">Barcode Scanner</h2>
         </div>
-        <p class="text-muted small">Scan or enter a barcode to look up inventory items quickly</p>
+        <p class="text-muted small">Scan or enter a barcode to look up items quickly</p>
     </div>
 
     <div class="row justify-content-center">
-        <div class="col-12 col-lg-8">
+        <div class="col-12 col-lg-6">
 
-            <div class="bg-light p-1 rounded-4 d-flex mb-4" style="max-width: 400px; margin: 0 auto;">
-                <button onclick="switchTab('camera')" id="tab-camera" class="btn flex-fill rounded-3 fw-bold py-2 shadow-sm bg-white">
-                    <i data-lucide="camera" size="16" class="me-2"></i> Camera Scan
+            <div class="bg-light p-1 rounded-4 d-flex mb-4 shadow-sm" style="max-width: 100%; margin: 0 auto;">
+                <button onclick="switchTab('camera')" id="tab-camera" class="btn flex-fill rounded-3 fw-bold py-2 shadow-sm bg-white border-0 transition-all">
+                    <i data-lucide="camera" size="16" class="me-1"></i> Camera
                 </button>
-                <button onclick="switchTab('manual')" id="tab-manual" class="btn flex-fill rounded-3 fw-bold py-2 text-muted">
-                    <i data-lucide="keyboard" size="16" class="me-2"></i> Manual Entry
+                <button onclick="switchTab('manual')" id="tab-manual" class="btn flex-fill rounded-3 fw-bold py-2 text-muted border-0 transition-all">
+                    <i data-lucide="keyboard" size="16" class="me-1"></i> Manual
                 </button>
             </div>
 
-            <div id="camera-section">
-                <div class="alert alert-warning border-0 rounded-4 p-2 d-flex align-items-center gap-3 mb-3 text-center justify-content-center" style="background-color: #fffbeb; color: #92400e; font-size: 11px;">
-                    <i data-lucide="alert-triangle" size="14"></i>
-                    <span>Camera scanning requires the published app. It may not work in the preview.</span>
+            <div id="camera-section" class="animate__animated animate__fadeIn">
+                <div class="alert alert-warning border-0 rounded-4 p-2 d-flex align-items-center gap-2 mb-3 text-center justify-content-center" style="background-color: #fffbeb; color: #92400e; font-size: 10px;">
+                    <i data-lucide="info" size="14"></i>
+                    <span>Requires HTTPS for camera access on mobile devices.</span>
                 </div>
 
-                <div class="bg-dark rounded-4 overflow-hidden position-relative shadow-lg mb-3" style="aspect-ratio: 4/3; background-color: #000;">
-                    <div id="reader" style="width: 100%;"></div>
+                <div class="bg-dark rounded-4 overflow-hidden position-relative shadow-lg mb-3" style="aspect-ratio: 1/1; background-color: #000; border: 4px solid #fff;">
+                    <div id="reader" style="width: 100%; height: 100%; object-fit: cover;"></div>
 
-                    <div id="scanner-overlay" class="position-absolute top-50 start-50 translate-middle d-none text-center">
-                        <div class="rounded-4 p-3 d-flex flex-column align-items-center" style="background: rgba(10, 148, 36, 0.8); color: white;">
-                            <i data-lucide="scan" size="32"></i>
-                            <span class="small fw-bold mt-1">Detected</span>
-                            <span id="detected-code" class="h6 fw-bold mb-0">...</span>
+                    <div id="scanner-overlay" class="position-absolute top-50 start-50 translate-middle d-none text-center w-75">
+                        <div class="rounded-4 p-3 d-flex flex-column align-items-center shadow-lg" style="background: rgba(10, 148, 36, 0.9); color: white;">
+                            <i data-lucide="check-circle" size="32" class="mb-1"></i>
+                            <span class="small fw-bold">Detected</span>
+                            <span id="detected-code" class="h6 fw-bold mb-0 text-break">...</span>
                         </div>
                     </div>
                 </div>
 
-                <button id="scan-again-btn" onclick="startScanning()" class="btn btn-light w-100 py-2 rounded-3 mb-3 fw-bold border d-none">
-                    <i data-lucide="refresh-cw" size="16" class="me-2"></i> Scan Again
+                <button id="scan-again-btn" onclick="startScanning()" class="btn btn-light w-100 py-3 rounded-4 mb-3 fw-bold border shadow-sm d-none">
+                    <i data-lucide="refresh-cw" size="18" class="me-2"></i> Scan Another Item
                 </button>
 
                 <div id="result-container" class="mt-4 d-none">
-                    <div class="d-flex align-items-center gap-2 mb-3">
-                        <i data-lucide="check-circle" class="text-success" size="18"></i>
-                        <span class="small fw-bold">Scan Result</span>
-                        <span id="display-result-code" class="text-muted small"></span>
-                    </div>
-
-                    <div id="not-found-card" class="card border-danger border-opacity-25 rounded-4 p-4 text-center d-none" style="background: #fffafa;">
+                    <div id="not-found-card" class="card border-danger border-opacity-25 rounded-4 p-4 text-center shadow-sm" style="background: #fffafa;">
                         <div class="bg-danger bg-opacity-10 rounded-circle p-2 d-inline-flex mb-3">
-                            <i data-lucide="x-circle" class="text-danger" size="24"></i>
+                            <i data-lucide="alert-circle" class="text-danger" size="28"></i>
                         </div>
-                        <h5 class="fw-bold text-dark">No item found</h5>
-                        <p class="text-muted small">Barcode <span id="error-code" class="fw-bold"></span> is not registered in the system.</p>
-                        <button onclick="openAddInventory()" class="btn btn-success rounded-3 px-4 py-2 mt-2 fw-bold" style="background-color: #0a9424;">
-                            <i data-lucide="package" size="16" class="me-2"></i> Add to Inventory
+                        <h5 class="fw-bold text-dark">Unregistered Item</h5>
+                        <p class="text-muted small">Barcode <span id="error-code" class="fw-bold text-dark"></span> is not in the hospital database.</p>
+                        <button onclick="openAddInventory()" class="btn btn-success w-100 rounded-3 py-3 fw-bold shadow-sm" style="background-color: #0a9424;">
+                            <i data-lucide="plus-circle" size="18" class="me-2"></i> Add to Inventory
                         </button>
                     </div>
                 </div>
             </div>
 
-            <p class="text-center text-muted small mt-4 px-5">
-                Point the camera at a barcode or QR code. Supports Code 128, Code 39, EAN, QR, and more.
+            <div id="manual-section" class="d-none animate__animated animate__fadeIn">
+                <div class="card border-0 shadow-sm rounded-4 p-4">
+                    <label class="form-label fw-bold small">Enter Barcode / SKU</label>
+                    <div class="input-group mb-3">
+                        <input type="text" id="manual-input" class="form-control form-control-lg rounded-start-3 shadow-none border-2" placeholder="e.g. 931778...">
+                        <button onclick="checkDatabase(document.getElementById('manual-input').value)" class="btn btn-success rounded-end-3 px-4">
+                            <i data-lucide="search" size="20"></i>
+                        </button>
+                    </div>
+                    <p class="text-muted text-xs mb-0" style="font-size: 11px;">Type the barcode exactly as shown on the packaging.</p>
+                </div>
+            </div>
+
+            <p class="text-center text-muted small mt-4 px-4" style="font-size: 11px;">
+                Supports standard hospital barcodes: Code 128, EAN-13, and QR Codes.
             </p>
         </div>
     </div>
@@ -79,7 +86,7 @@
     let isScanning = false;
 
     window.addEventListener('load', () => {
-        startScanning(); // Auto-start on load
+        startScanning();
     });
 
     function startScanning() {
@@ -88,24 +95,25 @@
         document.getElementById('result-container').classList.add('d-none');
         document.getElementById('scan-again-btn').classList.add('d-none');
         document.getElementById('scanner-overlay').classList.add('d-none');
+        document.getElementById('not-found-card').classList.add('d-none');
 
         html5QrCode.start(
             { facingMode: "environment" },
             {
-                fps: 20, // High sensitivity
-                qrbox: { width: 280, height: 180 },
-                aspectRatio: 1.333334
+                fps: 25, // Higher for better mobile responsiveness
+                qrbox: { width: 250, height: 250 },
+                aspectRatio: 1.0 // Square viewport is better for mobile
             },
             onScanSuccess
-        ).then(() => isScanning = true);
+        ).then(() => isScanning = true).catch(err => {
+            console.error("Scanner failed", err);
+        });
     }
 
     function onScanSuccess(decodedText) {
-        // Show detection overlay
         document.getElementById('scanner-overlay').classList.remove('d-none');
         document.getElementById('detected-code').innerText = decodedText;
 
-        // Stop scanning to process
         html5QrCode.stop().then(() => {
             isScanning = false;
             checkDatabase(decodedText);
@@ -113,21 +121,20 @@
     }
 
     function checkDatabase(code) {
+        if(!code) return;
+
         document.getElementById('result-container').classList.remove('d-none');
-        document.getElementById('display-result-code').innerText = code;
         document.getElementById('scan-again-btn').classList.remove('d-none');
 
         fetch(`/api/check_barcode/${code}`)
             .then(r => r.json())
             .then(data => {
                 if(data.status === "exists") {
-                    // Redirect directly to item view or prompt for stock-in/out
                     window.location.href = `/inventory?search=${code}`;
                 } else {
-                    // Show the "No item found" UI from your screenshot
                     document.getElementById('not-found-card').classList.remove('d-none');
                     document.getElementById('error-code').innerText = code;
-                    window.scannedCode = code; // Save for the 'Add' button
+                    window.scannedCode = code;
                 }
             });
     }
@@ -137,12 +144,29 @@
     }
 
     function switchTab(type) {
+        const camBtn = document.getElementById('tab-camera');
+        const manBtn = document.getElementById('tab-manual');
+        const camSec = document.getElementById('camera-section');
+        const manSec = document.getElementById('manual-section');
+
         if(type === 'manual') {
             html5QrCode.stop().then(() => {
                 isScanning = false;
-                document.getElementById('camera-section').classList.add('d-none');
-                // Implement manual section showing logic here
+                camSec.classList.add('d-none');
+                manSec.classList.remove('d-none');
+                camBtn.classList.remove('bg-white', 'shadow-sm');
+                camBtn.classList.add('text-muted');
+                manBtn.classList.add('bg-white', 'shadow-sm');
+                manBtn.classList.remove('text-muted');
             });
+        } else {
+            camSec.classList.remove('d-none');
+            manSec.classList.add('d-none');
+            manBtn.classList.remove('bg-white', 'shadow-sm');
+            manBtn.classList.add('text-muted');
+            camBtn.classList.add('bg-white', 'shadow-sm');
+            camBtn.classList.remove('text-muted');
+            startScanning();
         }
     }
 </script>

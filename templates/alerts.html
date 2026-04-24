@@ -3,65 +3,65 @@
 {% block title %}Alerts | VGH Stock{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4 py-lg-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+<div class="container-fluid px-2 px-md-3 py-3 py-lg-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
         <div>
             <h2 class="fw-bold text-dark m-0">Alerts</h2>
             <p class="text-muted small mb-0">Low stock and expiry warnings</p>
         </div>
-        <a href="/inventory" class="btn btn-light border rounded-3 px-3 fw-bold text-sm">
-            View Inventory
+        <a href="/inventory" class="btn btn-light border rounded-3 px-3 fw-bold text-sm w-100 w-md-auto shadow-sm">
+            <i data-lucide="eye" size="16" class="me-1"></i> View Inventory
         </a>
     </div>
 
     <div class="row g-3 mb-4">
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm p-4 h-100 rounded-4">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="rounded-3 p-2 d-flex align-items-center justify-content-center" style="background: #fef2f2; width: 45px; height: 45px;">
-                        <i data-lucide="package-x" class="text-danger" size="22"></i>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm p-3 p-md-4 h-100 rounded-4">
+                <div class="d-flex flex-column flex-md-row align-items-center align-items-md-center gap-2 gap-md-3 text-center text-md-start">
+                    <div class="rounded-3 p-2 d-flex align-items-center justify-content-center flex-shrink-0" style="background: #fef2f2; width: 42px; height: 42px;">
+                        <i data-lucide="package-x" class="text-danger" size="20"></i>
                     </div>
-                    <div class="text-start">
-                        <p class="text-muted small mb-0 font-bold">Out of Stock</p>
+                    <div>
+                        <p class="text-muted mb-0 font-bold" style="font-size: 11px;">Out of Stock</p>
                         <h3 class="fw-bold mb-0 text-dark">{{ out_of_stock_count }}</h3>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm p-4 h-100 rounded-4">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="rounded-3 p-2 d-flex align-items-center justify-content-center" style="background: #fffbeb; width: 45px; height: 45px;">
-                        <i data-lucide="trending-down" class="text-warning" size="22"></i>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm p-3 p-md-4 h-100 rounded-4">
+                <div class="d-flex flex-column flex-md-row align-items-center align-items-md-center gap-2 gap-md-3 text-center text-md-start">
+                    <div class="rounded-3 p-2 d-flex align-items-center justify-content-center flex-shrink-0" style="background: #fffbeb; width: 42px; height: 42px;">
+                        <i data-lucide="trending-down" class="text-warning" size="20"></i>
                     </div>
-                    <div class="text-start">
-                        <p class="text-muted small mb-0 font-bold">Low Stock</p>
+                    <div>
+                        <p class="text-muted mb-0 font-bold" style="font-size: 11px;">Low Stock</p>
                         <h3 class="fw-bold mb-0 text-dark">{{ low_stock_count }}</h3>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm p-4 h-100 rounded-4">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="rounded-3 p-2 d-flex align-items-center justify-content-center" style="background: #fef2f2; width: 45px; height: 45px;">
-                        <i data-lucide="calendar-x" class="text-danger" size="22"></i>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm p-3 p-md-4 h-100 rounded-4">
+                <div class="d-flex flex-column flex-md-row align-items-center align-items-md-center gap-2 gap-md-3 text-center text-md-start">
+                    <div class="rounded-3 p-2 d-flex align-items-center justify-content-center flex-shrink-0" style="background: #fef2f2; width: 42px; height: 42px;">
+                        <i data-lucide="calendar-x" class="text-danger" size="20"></i>
                     </div>
-                    <div class="text-start">
-                        <p class="text-muted small mb-0 font-bold">Expired Batches</p>
+                    <div>
+                        <p class="text-muted mb-0 font-bold" style="font-size: 11px;">Expired</p>
                         <h3 class="fw-bold mb-0 text-dark">0</h3>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm p-4 h-100 rounded-4">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="rounded-3 p-2 d-flex align-items-center justify-content-center" style="background: #fff7ed; width: 45px; height: 45px;">
-                        <i data-lucide="clock" class="text-warning" size="22"></i>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm p-3 p-md-4 h-100 rounded-4">
+                <div class="d-flex flex-column flex-md-row align-items-center align-items-md-center gap-2 gap-md-3 text-center text-md-start">
+                    <div class="rounded-3 p-2 d-flex align-items-center justify-content-center flex-shrink-0" style="background: #fff7ed; width: 42px; height: 42px;">
+                        <i data-lucide="clock" class="text-warning" size="20"></i>
                     </div>
-                    <div class="text-start">
-                        <p class="text-muted small mb-0 font-bold">Expiring (30d)</p>
+                    <div>
+                        <p class="text-muted mb-0 font-bold" style="font-size: 11px;">Due (30d)</p>
                         <h3 class="fw-bold mb-0 text-dark">0</h3>
                     </div>
                 </div>
@@ -70,55 +70,72 @@
     </div>
 
     <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
-        <div class="card-header bg-white border-0 p-4 pb-0">
-            <h6 class="fw-bold text-dark d-flex align-items-center gap-2">
+        <div class="card-header bg-white border-0 p-3 p-md-4 pb-0">
+            <h6 class="fw-bold text-dark d-flex align-items-center gap-2 m-0">
                 <i data-lucide="alert-triangle" class="text-warning" size="18"></i> Low Stock Items
             </h6>
         </div>
-        <div class="card-body p-5 text-center">
+        <div class="card-body p-3 p-md-4">
             {% if low_stock_items %}
                 <div class="table-responsive text-start">
-                    <table class="table align-middle">
-                        <thead class="text-muted small uppercase">
-                            <tr><th>Item</th><th>Current Stock</th><th>Min Limit</th><th>Action</th></tr>
+                    <table class="table align-middle" style="min-width: 350px;">
+                        <thead class="text-muted small text-uppercase" style="font-size: 10px;">
+                            <tr>
+                                <th>Item</th>
+                                <th class="text-center">Stock</th>
+                                <th class="d-none d-md-table-cell">Limit</th>
+                                <th class="text-end">Action</th>
+                            </tr>
                         </thead>
                         <tbody>
                             {% for item in low_stock_items %}
-                            <tr>
-                                <td class="fw-bold">{{ item.name }}</td>
-                                <td class="text-danger fw-bold">{{ item.stock }}</td>
-                                <td>{{ item.min_limit }}</td>
-                                <td><a href="/stock-in?id={{ item.id }}" class="btn btn-sm btn-success">Order</a></td>
+                            <tr class="border-bottom">
+                                <td class="fw-bold text-dark py-3">
+                                    <div class="text-truncate" style="max-width: 150px;">{{ item.name }}</div>
+                                    <span class="d-md-none text-muted" style="font-size: 10px;">Min: {{ item.min_limit }}</span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-danger bg-opacity-10 text-danger fw-bold rounded-pill px-3">{{ item.stock }}</span>
+                                </td>
+                                <td class="d-none d-md-table-cell">{{ item.min_limit }}</td>
+                                <td class="text-end">
+                                    <a href="/stock-in?id={{ item.id }}" class="btn btn-sm btn-success fw-bold px-3 py-1 rounded-3">
+                                        <i data-lucide="shopping-cart" size="14" class="d-md-none"></i>
+                                        <span class="d-none d-md-inline">Restock</span>
+                                    </a>
+                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
             {% else %}
-                <div class="py-4">
+                <div class="py-4 text-center">
                     <p class="text-success fw-bold d-flex align-items-center justify-content-center gap-2 mb-0">
-                        <i data-lucide="check-circle" size="18"></i> All items are above minimum stock levels
+                        <i data-lucide="check-circle" size="18"></i>
+                        <span class="small">All items are sufficiently stocked</span>
                     </p>
                 </div>
             {% endif %}
         </div>
     </div>
 
-    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-        <div class="card-header bg-white border-0 p-4 pb-0 d-flex justify-content-between align-items-center">
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+        <div class="card-header bg-white border-0 p-3 p-md-4 pb-0 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3">
             <h6 class="fw-bold text-dark d-flex align-items-center gap-2 m-0">
                 <i data-lucide="calendar-days" class="text-danger" size="18"></i> Expiry Tracking
             </h6>
-            <div class="btn-group btn-group-sm rounded-3 overflow-hidden shadow-xs border">
-                <button class="btn btn-light px-3 fw-bold border-end">7d</button>
-                <button class="btn btn-success px-3 fw-bold" style="background: var(--vgh-green); border-color: var(--vgh-green);">30d</button>
-                <button class="btn btn-light px-3 fw-bold border-start">90d</button>
+            <div class="btn-group btn-group-sm rounded-3 overflow-hidden shadow-xs border w-100 w-sm-auto">
+                <button class="btn btn-light px-3 fw-bold border-end flex-fill">7d</button>
+                <button class="btn btn-success px-3 fw-bold flex-fill" style="background: var(--vgh-green); border-color: var(--vgh-green);">30d</button>
+                <button class="btn btn-light px-3 fw-bold border-start flex-fill">90d</button>
             </div>
         </div>
-        <div class="card-body p-5 text-center">
-            <div class="py-4">
+        <div class="card-body p-4 p-md-5">
+            <div class="py-4 text-center">
                 <p class="text-success fw-bold d-flex align-items-center justify-content-center gap-2 mb-0">
-                    <i data-lucide="check-circle" size="18"></i> No batches expiring in the next 30 days
+                    <i data-lucide="check-circle" size="18"></i>
+                    <span class="small">No batches expiring in the selected period</span>
                 </p>
             </div>
         </div>
@@ -128,5 +145,9 @@
 <style>
     .font-bold { font-weight: 700; }
     .shadow-xs { box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+    .text-xs { font-size: 0.75rem; }
+    @media (max-width: 576px) {
+        .card-header .btn-group { margin-top: 10px; }
+    }
 </style>
 {% endblock %}
