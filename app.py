@@ -11,7 +11,7 @@ app.secret_key = 'vgh_hospital_secure_key_2026'
 # Silence specific logging shutdown errors in some Python environments
 logging.raiseExceptions = False
 PNG_TIMEZONE = pytz.timezone('Pacific/Port_Moresby')
-MAINTENANCE_TARGET = PNG_TIMEZONE.localize(datetime(2026, 4, 24, 21, 53))
+MAINTENANCE_TARGET = PNG_TIMEZONE.localize(datetime(2026, 4, 25, 12, 00))
 
 
 @app.before_request
