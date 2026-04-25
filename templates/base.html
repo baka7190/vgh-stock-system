@@ -164,31 +164,59 @@
     <div id="sidebarOverlay" onclick="toggleMobileMenu()"></div>
 
     <nav id="sidebar" class="d-flex flex-column">
-        <div class="brand-box">
-            <div class="brand-logo"><i data-lucide="plus" color="white"></i></div>
-            <div>
-                <h6 class="mb-0 fw-bold text-white">VGH Stock</h6>
-                <small class="text-secondary" style="font-size: 11px;">Vanimo General Hospital</small>
-            </div>
+    <div class="brand-box">
+        <div class="brand-logo"><i data-lucide="plus" color="white"></i></div>
+        <div>
+            <h6 class="mb-0 fw-bold text-white">VGH Stock</h6>
+            <small class="text-secondary" style="font-size: 11px;">Vanimo General Hospital</small>
         </div>
-        <div class="nav flex-column mb-auto">
-            <a href="/dashboard" class="nav-link {% if request.path == '/dashboard' %}active{% endif %}"><i data-lucide="layout-grid"></i> Dashboard</a>
-            <a href="/inventory" class="nav-link {% if request.path == '/inventory' %}active{% endif %}"><i data-lucide="package"></i> Inventory</a>
-            <a href="/stock-in" class="nav-link {% if request.path == '/stock-in' %}active{% endif %}"><i data-lucide="package-plus"></i> Stock In</a>
-            <a href="/dispatch" class="nav-link {% if request.path == '/dispatch' %}active{% endif %}"><i data-lucide="package-minus"></i> Stock Out</a>
-            <a href="/scanner" class="nav-link {% if request.path == '/scanner' %}active{% endif %}"><i data-lucide="scan"></i> Scanner</a>
-            <a href="/alerts" class="nav-link {% if request.path == '/alerts' %}active{% endif %}">
-                <div class="d-flex align-items-center justify-content-between w-100">
-                    <div class="d-flex align-items-center gap-3"><i data-lucide="bell"></i> Alerts</div>
-                    {% if sidebar_alert_count > 0 %}<span class="alert-dot"></span>{% endif %}
+    </div>
+
+    <div class="nav flex-column mb-auto">
+        <a href="/dashboard" class="nav-link {% if request.path == '/dashboard' %}active{% endif %}">
+            <i data-lucide="layout-grid"></i> Dashboard
+        </a>
+
+        <a href="/inventory" class="nav-link {% if request.path == '/inventory' %}active{% endif %}">
+            <i data-lucide="package"></i> Inventory
+        </a>
+
+        <a href="/stock-in" class="nav-link {% if request.path == '/stock-in' %}active{% endif %}">
+            <i data-lucide="package-plus"></i> Stock In
+        </a>
+
+        <a href="/dispatch" class="nav-link {% if request.path == '/dispatch' %}active{% endif %}">
+            <i data-lucide="package-minus"></i> Stock Out
+        </a>
+
+        <a href="/scanner" class="nav-link {% if request.path == '/scanner' %}active{% endif %}">
+            <i data-lucide="scan"></i> Scanner
+        </a>
+
+        <a href="/alerts" class="nav-link {% if request.path == '/alerts' %}active{% endif %}">
+            <div class="d-flex align-items-center justify-content-between w-100">
+                <div class="d-flex align-items-center gap-3">
+                    <i data-lucide="bell"></i> Alerts
                 </div>
-            </a>
-        </div>
-        <div class="mt-4 pt-4 border-top border-secondary border-opacity-25">
-            <a href="/logout" class="nav-link text-danger fw-bold"><i data-lucide="log-out"></i> Sign Out</a>
-        </div>
-        <div class="copyright">© 2026 Vanimo General Hospital</div>
-    </nav>
+                {% if sidebar_alert_count > 0 %}
+                <span class="alert-dot"></span>
+                {% endif %}
+            </div>
+        </a>
+
+        <a href="/reports" class="nav-link {% if request.path == '/reports' %}active{% endif %}">
+            <i data-lucide="bar-chart-3"></i> Reports
+        </a>
+    </div>
+
+    <div class="mt-4 pt-4 border-top border-secondary border-opacity-25">
+        <a href="/logout" class="nav-link text-danger fw-bold">
+            <i data-lucide="log-out"></i> Sign Out
+        </a>
+    </div>
+
+    <div class="copyright">© 2026 Vanimo General Hospital</div>
+</nav>
 
     <main class="main-content">
         {% block content %}{% endblock %}
